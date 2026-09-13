@@ -1,0 +1,65 @@
+services:
+# 1. Base de Datos: PostgreSQL 16 con extensión pgvector preinstalada  
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agro_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB=${POSTGRES_DB}
+      POSTGRES_USER=${POSTGRES_USER}
+      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agro_network
+
+# 2. Backend: Spring Boot 3.3 (Java 21)  
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agro_backend
+    restart: unless-stopped
+    environment:
+      SPRNG_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRNG_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRNG_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - agro_network
+
+# 3. Frontend: React + TypeScript + PWA (Nginx en producción)   
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agro_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - agro_network
+
+
+volumes:
+  pgdata:
+  agro_network:
+    driver: bridge
+
+      

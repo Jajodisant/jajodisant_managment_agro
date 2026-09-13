@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ================================================================= -->
+    <!-- HERENCIA DE SPRING BOOT STARTER PARENT                            -->
+    <!-- Define versiones compatibles de dependencias base y plugins.      -->
+    <!-- Si hay conflictos de versión con starters, revisa esta versión.   -->
+    <!-- ================================================================= -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/> <!-- Busca directamente en repositorios remotos/locales -->
+    </parent>
+
+    <!-- ================================================================= -->
+    <!-- COORDENADAS DEL PROYECTO (GAV)                                    -->
+    <!-- ================================================================= -->
+    <groupId>com.agro</groupId>
+    <artifactId>agro-backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>agro-backend</name>
+    <description>Sistema de Gestión Agropecuaria y Asesor de Decisiones con IA</description>
+
+    <!-- ================================================================= -->
+    <!-- PROPIEDADES GLOBALES Y VERSIONES MANUALES                         -->
+    <!-- Centraliza versiones no manejadas por el starter parent.          -->
+    <!-- ================================================================= -->
+    <properties>
+        <!-- Requiere JDK 21 tanto en compilación local como en el Dockerfile -->
+        <java.version>21</java.version>
+        <!-- Versión de OpenAPI/Swagger UI compatible con Spring Boot 3.3.x -->
+        <springdoc.version>2.6.0</springdoc.version>
+        <!-- JJWT versión modular moderna (0.12.x usa verifyWith y signWith) -->
+        <jjwt.version>0.12.6</jjwt.version>
+    </properties>
+
+    <dependencies>
+        <!-- ============================================================= -->
+        <!-- 1. CAPA WEB / API REST                                        -->
+        <!-- Servidor embebido Tomcat, Jackson para JSON y Spring MVC.     -->
+        <!-- Falla típica: Si los endpoints devuelven 404 o el puerto 8080 -->
+        <!-- está bloqueado, el origen de arranque está aquí.             -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 2. PERSISTENCIA Y BASE DE DATOS (JPA + HIBERNATE)             -->
+        <!-- Manejo de ORM, repositorios y EntityManager.                   -->
+        <!-- Falla típica: Error al mapear entidades @Entity o al iniciar  -->
+        <!-- por 'spring.jpa.hibernate.ddl-auto' conflictivo con Flyway.   -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 3. DRIVER JDBC DE POSTGRESQL                                  -->
+        <!-- Driver en runtime para conectar Spring Boot con PostgreSQL.   -->
+        <!-- Falla típica: 'Connection refused' o 'Authentication failed'  -->
+        <!-- revisa SPRING_DATASOURCE_URL, usuario y password en .env.     -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 4. CONTROL DE VERSIONES DE BASE DE DATOS (FLYWAY)             -->
+        <!-- Ejecuta scripts V{version}__{nombre}.sql automáticamente.     -->
+        <!-- Falla típica: 'FlywayException: Validate failed' ocurre si    -->
+        <!-- modificas un script SQL de migración ya aplicado en la BD.    -->
+        <!-- Nota: En Spring Boot 3 es obligatorio agregar el módulo       -->
+        <!-- 'flyway-database-postgresql' además del 'flyway-core'.        -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 5. VALIDACIÓN DE ENTRADAS (BEAN VALIDATION / HIBERNATE)       -->
+        <!-- Soporte para @Valid, @NotNull, @Size, @Positive, etc. en DTOs.-->
+        <!-- Falla típica: Si envías un request inválido y no devuelve 400 -->
+        <!-- (Bad Request), verifica que el parámetro tenga @Valid en el   -->
+        <!-- Controller.                                                   -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 6. SEGURIDAD Y TOKEN JWT                                      -->
+        <!-- - spring-boot-starter-security: Filtros de autenticación.    -->
+        <!-- - jjwt-api: Interfaces de JWT en tiempo de compilación.       -->
+        <!-- - jjwt-impl y jjwt-jackson: Implementación y serializador     -->
+        <!--   JSON en tiempo de ejecución (scope: runtime).               -->
+        <!-- Falla típica: 'ClassNotFoundException' en JJWT ocurre si     -->
+        <!-- falta jjwt-impl o jjwt-jackson al momento de parsear claims.  -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 7. DOCUMENTACIÓN INTERACTIVA SWAGGER / OPENAPI                -->
+        <!-- Genera la UI en http://localhost:8080/swagger-ui/index.html   -->
+        <!-- Falla típica: Si la URL da 401/403 (Forbidden), asegúrate     -->
+        <!-- de excluir '/swagger-ui/**' y '/v3/api-docs/**' de las rutas   -->
+        <!-- protegidas en SecurityConfig.                                 -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 8. PRODUCTIVIDAD CON LOMBOK                                   -->
+        <!-- Genera getters, setters, constructores y @Builder en build.   -->
+        <!-- Falla típica: Si tu IDE marca errores de métodos no           -->
+        <!-- encontrados (ej. 'getId()'), revisa que el plugin de Lombok   -->
+        <!-- y la opción 'Annotation Processing' estén activos en el IDE.  -->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ============================================================= -->
+        <!-- 9. PRUEBAS UNITARIAS Y DE INTEGRACIÓN                         -->
+        <!-- Mockito, JUnit Jupiter y emuladores de contexto de seguridad. -->
+        <!-- Scope 'test' asegura que nada de esto se empaquete al JAR final-->
+        <!-- ============================================================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- ================================================================= -->
+    <!-- PLUGINS DE CONSTRUCCIÓN                                           -->
+    <!-- ================================================================= -->
+    <build>
+        <plugins>
+            <!-- Plugin oficial de Spring Boot para empaquetar el JAR        -->
+            <!-- autocontenido ejecutable ('java -jar app.jar').             -->
+            <!-- Excluye el artefacto de Lombok del JAR generado para       -->
+            <!-- reducir peso y evitar dependencias innecesarias en runtime. -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
