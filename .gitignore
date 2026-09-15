@@ -34,3 +34,9 @@ pnpm-debug.log*
 # Docker
 docker-data/
 pgdata/
+
+# Documentación interna de desarrollo y bitácoras (mantener local)
+PLAN_MAESTRO_DESARROLLO_AGRO.md
+RESUMEN_PROYECTO_CONTINUIDAD.md
+VISION_Y_CASO_DE_NEGOCIO.md
+docs/
