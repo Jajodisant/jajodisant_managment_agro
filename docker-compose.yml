@@ -5,9 +5,9 @@ services:
     container_name: agro_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB=${POSTGRES_DB}
-      POSTGRES_USER=${POSTGRES_USER}
-      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -28,9 +28,9 @@ services:
     container_name: agro_backend
     restart: unless-stopped
     environment:
-      SPRNG_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      SPRNG_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRNG_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SERVER_PORT: ${SERVER_PORT:-8080}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
@@ -56,10 +56,9 @@ services:
     networks:
       - agro_network
 
-
 volumes:
   pgdata:
+
+networks:
   agro_network:
     driver: bridge
-
-      
