@@ -136,6 +136,20 @@ const translations: Record<Language, Record<string, string>> = {
     label_weight: 'Peso promedio',
     label_density: 'Densidad de siembra',
     label_status: 'Estado',
+
+    // HU-07 Optimización de Cosecha & Inflexión Biológica
+    hu07_title: 'Punto de Inflexión Biológico & Cosecha Óptima (HU-07)',
+    hu07_subtitle: 'Cálculo de FCR marginal y semana económica óptima de cosecha frente al precio en pie.',
+    hu07_market_price: 'Precio de Mercado en Pie (COP/kg)',
+    hu07_marginal_fcr: 'FCR Marginal',
+    hu07_marginal_cost: 'Costo Marginal por Kg Ganado',
+    hu07_marginal_margin: 'Margen Neto por Kg Adicional',
+    hu07_daily_loss_gain: 'Pérdida/Ganancia Diaria Proyectada',
+    hu07_target_weight: 'Peso Objetivo Comercial',
+    hu07_status_optimal: '¡Cosecha Inmediata!',
+    hu07_status_approaching: 'Acabado Final',
+    hu07_status_growth: 'Crecimiento Eficiente',
+    hu07_recommended_date: 'Fecha Sugerida de Cosecha',
   },
   en: {
     // App & Header
@@ -270,6 +284,20 @@ const translations: Record<Language, Record<string, string>> = {
     label_weight: 'Avg Weight',
     label_density: 'Stocking Density',
     label_status: 'Status',
+
+    // HU-07 Harvest Optimization & Biological Inflexion
+    hu07_title: 'Biological Inflexion & Optimal Harvest (HU-07)',
+    hu07_subtitle: 'Marginal FCR calculation and optimal economic harvest window vs live market price.',
+    hu07_market_price: 'Live Market Price (COP/kg)',
+    hu07_marginal_fcr: 'Marginal FCR',
+    hu07_marginal_cost: 'Marginal Cost per Kg Gained',
+    hu07_marginal_margin: 'Net Margin per Additional Kg',
+    hu07_daily_loss_gain: 'Projected Daily Profit/Loss',
+    hu07_target_weight: 'Target Commercial Weight',
+    hu07_status_optimal: 'Immediate Harvest!',
+    hu07_status_approaching: 'Final Finishing',
+    hu07_status_growth: 'Efficient Growth',
+    hu07_recommended_date: 'Suggested Harvest Date',
   }
 };
 

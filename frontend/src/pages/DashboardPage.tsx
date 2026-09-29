@@ -17,7 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { api } from '../services/api';
-import { Farm, Batch, FeedingRecord, Biometry } from '../types';
+import { Farm, Batch, FeedingRecord, Biometry, HarvestOptimization } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 
 interface CalendarEntry {
@@ -40,6 +40,7 @@ export const DashboardPage: React.FC = () => {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [feedingRecords, setFeedingRecords] = useState<FeedingRecord[]>([]);
   const [biometries, setBiometries] = useState<Biometry[]>([]);
+  const [harvestOptimizations, setHarvestOptimizations] = useState<HarvestOptimization[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Calendario Real Dinámico
@@ -63,6 +64,7 @@ export const DashboardPage: React.FC = () => {
         const allBatches: Batch[] = [];
         const allFeedings: FeedingRecord[] = [];
         const allBiometries: Biometry[] = [];
+        const allOptims: HarvestOptimization[] = [];
 
         for (const farm of farmsData) {
           const b = await api.getBatchesByFarm(farm.id);
@@ -83,11 +85,19 @@ export const DashboardPage: React.FC = () => {
               // Ignore batch biometry fetch errors
             }
           }
+
+          try {
+            const optRes = await api.getFarmHarvestOptimizations(farm.id);
+            allOptims.push(...optRes);
+          } catch (e) {
+            // Ignore optimization fetch errors
+          }
         }
 
         setBatches(allBatches);
         setFeedingRecords(allFeedings);
         setBiometries(allBiometries);
+        setHarvestOptimizations(allOptims);
 
         if (allBatches.length > 0) {
           setSelectedBatchId(allBatches[0].id);
@@ -106,6 +116,21 @@ export const DashboardPage: React.FC = () => {
 
   // Generación de tareas "Pendiente hoy" según los lotes en campo
   const pendingTasks = [
+    ...harvestOptimizations
+      .filter((o) => o.harvestStatus === 'OPTIMAL_HARVEST' || o.isPastOptimalPoint)
+      .map((o) => ({
+        id: `harvest-${o.batchId}`,
+        type: 'alert' as const,
+        title: o.isPastOptimalPoint
+          ? '¡Punto de Inflexión! Cosecha Inmediata'
+          : 'Talla Comercial Óptima Alcanzada',
+        batch: o.batchCode,
+        pond: 'Decisión Cosecha HU-07',
+        species: o.speciesName,
+        detail: `Peso: ${o.currentAvgWeightG.toFixed(1)} g • Costo marginal $${o.marginalCostPerKgGain.toLocaleString()}/kg`,
+        actionUrl: '/stats',
+        actionLabel: 'Ver Optimización HU-07',
+      })),
     ...activeBatches.map((b) => ({
       id: `feed-${b.id}`,
       type: 'feeding' as const,

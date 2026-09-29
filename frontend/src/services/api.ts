@@ -8,7 +8,8 @@ import {
   FeedingRecord,
   DailyFeedingPlan,
   BatchFinancialSummary,
-  CostRecord
+  CostRecord,
+  HarvestOptimization
 } from '../types';
 
 const BASE_URL = '/api/v1';
@@ -121,5 +122,15 @@ export const api = {
     category: string;
     description: string;
     totalAmount: number;
-  }) => request<CostRecord>('/costs', { method: 'POST', body: JSON.stringify(data) })
+  }) => request<CostRecord>('/costs', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Optimización de Cosecha & Inflexión Biológica (HU-07)
+  getHarvestOptimization: (batchId: string, marketPrice?: number) => {
+    const params = marketPrice ? `?marketPrice=${marketPrice}` : '';
+    return request<HarvestOptimization>(`/advisory/harvest-optimization/${batchId}${params}`);
+  },
+  getFarmHarvestOptimizations: (farmId: string, marketPrice?: number) => {
+    const params = marketPrice ? `?marketPrice=${marketPrice}` : '';
+    return request<HarvestOptimization[]>(`/advisory/harvest-optimization/farm/${farmId}${params}`);
+  }
 };
