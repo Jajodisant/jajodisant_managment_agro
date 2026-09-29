@@ -40,6 +40,16 @@ export const FinancesPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     if (selectedFarmId) {
       loadBatches(selectedFarmId);
     } else {
@@ -360,8 +370,13 @@ export const FinancesPage: React.FC = () => {
 
       {/* Modal: Asentar Registro de Gasto Directo / Indirecto */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#1F1D1A]/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="card-paper max-w-lg w-full p-6 space-y-4 shadow-xl border border-[#E2D9CA] dark:border-[#332E27] max-h-[90vh] overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+          className="fixed inset-0 z-50 bg-[#1F1D1A]/50 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div className="card-paper max-w-lg w-full p-6 space-y-4 shadow-xl border border-[#E2D9CA] dark:border-[#332E27] max-h-[90vh] overflow-y-auto cursor-default">
             <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
               <span className="notebook-stamp text-[10px]">ASIENTO CONTABLE HU-06</span>
               <h3 className="text-lg font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA] mt-1">

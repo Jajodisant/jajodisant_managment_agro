@@ -30,6 +30,17 @@
   .tabular-nums, table, .metric-number {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Accesibilidad de foco por teclado WCAG 2.1 AA */
+  :focus-visible {
+    outline: 2px solid #2E4A36;
+    outline-offset: 2px;
+  }
+
+  .dark :focus-visible {
+    outline: 2px solid #86A98F;
+    outline-offset: 2px;
+  }
 }
 
 /* Optimización ergonómica para celulares con notch y gestos */

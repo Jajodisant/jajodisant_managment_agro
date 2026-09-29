@@ -115,7 +115,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         </div>
 
         {/* Lista de Colecciones / Capítulos */}
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
           {navSections.map((section) => (
             <div key={section.title}>
               <h2 className="px-2 text-[11px] font-semibold uppercase tracking-wider text-[#666159] dark:text-[#9E9689] mb-2">
@@ -295,7 +295,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       {/* ========================================================================= */}
       {/* 4. Barra Inferior Móvil (Máximo 5 Pestañas Táctiles >= 48px) */}
       {/* ========================================================================= */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FBF8F1] dark:bg-[#1F1C18] border-t border-[#E2D9CA] dark:border-[#332E27] safe-bottom transition-colors">
+      <nav aria-label="Navegación móvil" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FBF8F1] dark:bg-[#1F1C18] border-t border-[#E2D9CA] dark:border-[#332E27] safe-bottom transition-colors">
         <div className="grid grid-cols-5 h-14 max-w-lg mx-auto">
           {mobileTabs.map((tab) => {
             const Icon = tab.icon;

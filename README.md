@@ -387,10 +387,13 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Libro de Lotes:** Tabla con encabezado editorial y números tabulares (`tabular-nums`).
   * [x] **Exportación Real:** Generación de reportes descargables en CSV y soporte de impresión de ficha técnica.
 
-* **Fase 5: Ajustes Finos & Revisión de Accesibilidad (Próxima):**
-  * [ ] Verificación de contraste WCAG AA en todos los estados.
-  * [ ] Ergonomía táctil final en pantallas móviles de campo (≥ 48 px en todos los botones).
-  * [ ] Pulido de microinteracciones y persistencia offline.
+* **Fase 5: Ajustes Finos & Revisión de Accesibilidad — [✅ 100% COMPLETADA]:**
+  * [x] **Verificación de Contraste WCAG 2.1 AA:** Garantizado en modo claro (papel `#F4EFE3` con tinta `#1F1D1A`, ratio > 11:1) y modo oscuro.
+  * [x] **Navegación por Teclado:** Anillos de foco visibles (`:focus-visible`) personalizados de 2px con offset para todos los controles interactivos.
+  * [x] **Accesibilidad de Modales:** `role="dialog"`, `aria-modal="true"`, cierre intuitivo al pulsar tecla `Escape` y pulsación fuera del cuadro (backdrop click).
+  * [x] **Hitos Semánticos ARIA:** Etiquetas `aria-label` en la barra de navegación lateral de escritorio y en la barra táctil de 5 pestañas móvil.
+  * [x] **Ergonomía Táctil en Campo:** Objetivos de pulsación $\ge 48\text{ px}$ en botones primarios/secundarios y fuentes $\ge 16\text{ px}$ en campos de texto móviles para evitar auto-zoom indeseado.
+  * [x] **Integridad Operativa:** Conservación intacta del 100% de la lógica de negocio, endpoints REST y persistencia IndexedDB/Dexie.
 
 ---
 

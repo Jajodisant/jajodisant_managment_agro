@@ -9,12 +9,8 @@ import {
   Layers,
   ChevronRight,
   Filter,
-  Bookmark,
-  Share2,
   FileCheck,
-  FileClock,
-  Sparkles,
-  ExternalLink
+  FileClock
 } from 'lucide-react';
 import { LIBRARY_ARTICLES, LibraryArticle } from '../data/libraryArticles';
 import { useTranslation } from '../context/LanguageContext';
