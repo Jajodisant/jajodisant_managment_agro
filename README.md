@@ -380,11 +380,17 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Sección Errores Comunes:** Guía práctica de fallos operativos habituales en campo.
   * [x] **Etiquetado y Buscador:** Estado de validación técnica ("Borrador por revisar" / "Aprobado") y buscador reactivo en vivo.
 
-* **Fase 4: Estadísticas & Curvas Comparativas (Próxima):**
-  * [ ] Gráficos de línea fina y barras planas con la paleta de cuaderno.
-  * [ ] Curvas de crecimiento, evolución de biomasa viva y FCR ponderado por lote.
-  * [ ] Comparativo de rendimiento y costos entre especies (peces vs. cerdos).
-  * [ ] Exportación de reportes zootécnicos.
+* **Fase 4: Estadísticas & Curvas Comparativas — [✅ 100% COMPLETADA]:**
+  * [x] **Curvas Biológicas de Crecimiento:** Gráficos de línea fina SVG con evolución de ganancia de peso semanal y FCR ponderado.
+  * [x] **Producción Mensual:** Gráficos de barras planas con paleta de libro (Peces vs. Cerdos).
+  * [x] **Matriz Comparativa Cruzada:** Evaluación técnica y económica directa entre piscicultura y porcicultura (FCR, $/kg, precios en pie y márgenes).
+  * [x] **Libro de Lotes:** Tabla con encabezado editorial y números tabulares (`tabular-nums`).
+  * [x] **Exportación Real:** Generación de reportes descargables en CSV y soporte de impresión de ficha técnica.
+
+* **Fase 5: Ajustes Finos & Revisión de Accesibilidad (Próxima):**
+  * [ ] Verificación de contraste WCAG AA en todos los estados.
+  * [ ] Ergonomía táctil final en pantallas móviles de campo (≥ 48 px en todos los botones).
+  * [ ] Pulido de microinteracciones y persistencia offline.
 
 ---
 
