@@ -14,10 +14,15 @@ import {
   Camera,
   ArrowRight,
   Clock,
-  Info
+  Info,
+  Trash2,
+  X
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Farm, Batch, FeedingRecord, Biometry, HarvestOptimization } from '../types';
+import { FieldPhoto } from '../db/db';
+import { getFieldPhotos, deleteFieldPhoto } from '../services/photoService';
+import { FieldPhotoCaptureModal } from '../components/common/FieldPhotoCaptureModal';
 import { useTranslation } from '../context/LanguageContext';
 
 interface CalendarEntry {
@@ -41,6 +46,9 @@ export const DashboardPage: React.FC = () => {
   const [feedingRecords, setFeedingRecords] = useState<FeedingRecord[]>([]);
   const [biometries, setBiometries] = useState<Biometry[]>([]);
   const [harvestOptimizations, setHarvestOptimizations] = useState<HarvestOptimization[]>([]);
+  const [fieldPhotos, setFieldPhotos] = useState<FieldPhoto[]>([]);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState<boolean>(false);
+  const [selectedPhotoModal, setSelectedPhotoModal] = useState<FieldPhoto | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Calendario Real Dinámico
@@ -102,6 +110,14 @@ export const DashboardPage: React.FC = () => {
         if (allBatches.length > 0) {
           setSelectedBatchId(allBatches[0].id);
         }
+      }
+
+      // Cargar evidencias fotográficas offline de Dexie
+      try {
+        const photos = await getFieldPhotos();
+        setFieldPhotos(photos);
+      } catch (err) {
+        console.error('Error al cargar fotos locales:', err);
       }
     } catch (err) {
       console.error('Error cargando datos de bitácora:', err);
@@ -255,6 +271,31 @@ export const DashboardPage: React.FC = () => {
       });
     });
 
+    // 4. Capturas fotográficas de campo (Offline Dexie)
+    fieldPhotos.forEach((photo) => {
+      const k = photo.capturedAt;
+      if (!map[k]) map[k] = [];
+      const batch = batches.find((b) => b.id === photo.batchId);
+      const categoryNames: Record<string, string> = {
+        water_clarity: 'Turbidez / Disco Secchi',
+        fish_health: 'Branquias / Sanidad Peces',
+        pig_health: 'Piel / Lesiones Porcinas',
+        feed_sample: 'Calidad de Alimento',
+        general: 'Inspección General',
+      };
+      map[k].push({
+        id: `photo-${photo.id}`,
+        time: new Date(photo.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'biometry',
+        title: `Foto: ${categoryNames[photo.category] || photo.category}`,
+        batch: batch?.batchCode || 'General',
+        species: batch?.speciesCommonName || 'Campo',
+        pond: batch?.pondCodeName || (batch?.penCode ? `Corral ${batch.penCode}` : 'Campo'),
+        detail: photo.caption ? `${photo.caption} (Registro fotográfico offline)` : 'Evidencia visual capturada en campo con cámara móvil.',
+        hasPhoto: true,
+      });
+    });
+
     // Eventos de bitácora de demostración si la base de datos está vacía para el día de hoy
     if (!map[todayKey] || map[todayKey].length === 0) {
       map[todayKey] = [
@@ -284,7 +325,7 @@ export const DashboardPage: React.FC = () => {
     }
 
     return map;
-  }, [feedingRecords, biometries, batches, todayKey]);
+  }, [feedingRecords, biometries, batches, fieldPhotos, todayKey]);
 
   const selectedDayEvents = realEventsByDate[selectedDateKey] || [];
 
@@ -330,6 +371,14 @@ export const DashboardPage: React.FC = () => {
 
         {/* Botones de acción rápida de cuaderno */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsCameraModalOpen(true)}
+            className="btn-secondary text-xs sm:text-sm px-3.5 h-11 flex items-center gap-1.5"
+            title="Capturar foto o evidencia zootécnica de campo"
+          >
+            <Camera className="w-4 h-4 text-[#8A4B2A] dark:text-[#D99675]" />
+            <span>Foto de Campo</span>
+          </button>
           <Link
             to="/feeding"
             className="btn-primary text-xs sm:text-sm px-4 h-11"
@@ -636,6 +685,80 @@ export const DashboardPage: React.FC = () => {
               })}
             </div>
           )}
+
+          {/* Sección Álbum de Evidencias Fotográficas de Campo Offline */}
+          <div className="card-paper p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-[#8A4B2A] dark:text-[#D99675]" />
+                <h3 className="font-serif font-semibold text-sm sm:text-base text-[#1F1D1A] dark:text-[#EDE6DA]">
+                  Evidencias de Campo Offline
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-[#666159] dark:text-[#9E9689]">
+                  {fieldPhotos.length} {fieldPhotos.length === 1 ? 'foto' : 'fotos'}
+                </span>
+                <button
+                  onClick={() => setIsCameraModalOpen(true)}
+                  className="btn-primary text-xs px-2.5 py-1 h-7 flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tomar</span>
+                </button>
+              </div>
+            </div>
+
+            {fieldPhotos.length === 0 ? (
+              <div className="p-4 text-center border border-dashed border-[#E2D9CA] dark:border-[#332E27] rounded-[4px] bg-[#FAF6EE] dark:bg-[#1A1815]">
+                <Camera className="w-8 h-8 text-[#666159] dark:text-[#9E9689] mx-auto mb-1.5 opacity-50" />
+                <p className="text-xs font-serif font-medium text-[#1F1D1A] dark:text-[#EDE6DA]">
+                  Sin fotografías registradas en este dispositivo
+                </p>
+                <p className="text-[11px] text-[#666159] dark:text-[#9E9689] mt-0.5 max-w-sm mx-auto">
+                  Captura fotos de turbidez con disco Secchi, branquias de peces, lesiones en cerdos o calidad de alimento. Se guardan 100% offline.
+                </p>
+                <button
+                  onClick={() => setIsCameraModalOpen(true)}
+                  className="btn-secondary text-xs mt-3 h-8 px-3 inline-flex items-center gap-1.5"
+                >
+                  <Camera className="w-3.5 h-3.5 text-[#2E4A36] dark:text-[#86A98F]" />
+                  <span>Capturar primera evidencia</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {fieldPhotos.map((photo) => {
+                  const b = batches.find((x) => x.id === photo.batchId);
+                  return (
+                    <div
+                      key={photo.id}
+                      onClick={() => setSelectedPhotoModal(photo)}
+                      className="cursor-pointer group relative rounded-[4px] border border-[#E2D9CA] dark:border-[#332E27] overflow-hidden bg-[#FAF6EE] dark:bg-[#1A1815] hover:border-[#2E4A36] transition shadow-xs"
+                    >
+                      <img
+                        src={photo.dataUrl}
+                        alt={photo.caption || 'Foto de campo'}
+                        className="w-full h-24 sm:h-28 object-cover group-hover:scale-105 transition duration-200"
+                        loading="lazy"
+                      />
+                      <div className="p-1.5">
+                        <div className="flex items-center justify-between text-[10px] text-[#666159] dark:text-[#9E9689]">
+                          <span className="font-mono truncate">{b?.batchCode || 'Lote'}</span>
+                          <span>{photo.capturedAt}</span>
+                        </div>
+                        {photo.caption && (
+                          <p className="text-[11px] font-medium text-[#1F1D1A] dark:text-[#EDE6DA] truncate mt-0.5">
+                            {photo.caption}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Panel Derecho (5 cols): Calendario Real Dinámico & Detalle */}
@@ -788,6 +911,92 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Modal de Captura de Fotografía en Campo (Offline Dexie) */}
+      <FieldPhotoCaptureModal
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onPhotoSaved={loadData}
+        batches={batches}
+      />
+
+      {/* Modal Visor de Foto Ampliada */}
+      {selectedPhotoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="card-paper max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 relative border border-[#E2D9CA] dark:border-[#332E27] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E2D9CA] dark:border-[#332E27] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="notebook-stamp text-[10px]">EVIDENCIA DE CAMPO</span>
+                <span className="text-xs font-mono text-[#666159] dark:text-[#9E9689]">
+                  {selectedPhotoModal.capturedAt}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedPhotoModal(null)}
+                className="p-1 rounded text-[#666159] hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="rounded-[4px] overflow-hidden border border-[#E2D9CA] dark:border-[#332E27] bg-black/5 dark:bg-black/40">
+              <img
+                src={selectedPhotoModal.dataUrl}
+                alt={selectedPhotoModal.caption || 'Foto de campo'}
+                className="w-full max-h-[50vh] object-contain mx-auto"
+              />
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">Categoría:</span>
+                <span className="font-mono text-[#2E4A36] dark:text-[#86A98F] capitalize">
+                  {selectedPhotoModal.category.replace('_', ' ')}
+                </span>
+              </div>
+
+              {(selectedPhotoModal.batchCode || selectedPhotoModal.installationName) && (
+                <div className="flex items-center justify-between text-[11px] text-[#666159] dark:text-[#9E9689] font-mono">
+                  <span>Asignación:</span>
+                  <span>{selectedPhotoModal.batchCode || 'Lote'} {selectedPhotoModal.installationName ? `• ${selectedPhotoModal.installationName}` : ''}</span>
+                </div>
+              )}
+
+              {selectedPhotoModal.caption && (
+                <div>
+                  <span className="font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">Descripción:</span>
+                  <p className="mt-0.5 text-[#666159] dark:text-[#9E9689] italic">
+                    "{selectedPhotoModal.caption}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-[#E2D9CA] dark:border-[#332E27] pt-3 flex items-center justify-between">
+              <button
+                onClick={async () => {
+                  if (selectedPhotoModal.id && window.confirm('¿Deseas eliminar esta fotografía offline?')) {
+                    await deleteFieldPhoto(selectedPhotoModal.id);
+                    setSelectedPhotoModal(null);
+                    await loadData();
+                  }
+                }}
+                className="btn-danger text-xs px-3 h-9 flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Eliminar foto</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedPhotoModal(null)}
+                className="btn-secondary text-xs px-4 h-9"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
