@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar as CalendarIcon,
@@ -18,20 +18,19 @@ import {
   Info
 } from 'lucide-react';
 import { api } from '../services/api';
-import { Farm, Batch, FeedingRecord } from '../types';
+import { Farm, Batch, FeedingRecord, Biometry } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 
-interface DayEvent {
+interface CalendarEntry {
   id: string;
   time: string;
-  type: 'feeding' | 'biometry' | 'alert' | 'note';
+  type: 'feeding' | 'biometry' | 'stocking' | 'alert';
   title: string;
   batch: string;
   species: string;
   pond: string;
   detail: string;
   hasPhoto?: boolean;
-  photoUrl?: string;
 }
 
 export const DashboardPage: React.FC = () => {
@@ -40,11 +39,13 @@ export const DashboardPage: React.FC = () => {
 
   const [farms, setFarms] = useState<Farm[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [feedingRecords, setFeedingRecords] = useState<FeedingRecord[]>([]);
+  const [biometries, setBiometries] = useState<Biometry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Calendario interactivo
-  const [selectedDay, setSelectedDay] = useState<number>(29);
-  const currentMonthYear = language === 'es' ? 'Septiembre 2026' : 'September 2026';
+  // Calendario Real Dinámico
+  const [viewDate, setViewDate] = useState<Date>(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
   // Lote seleccionado para panel de lectura / detalle
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
@@ -61,11 +62,34 @@ export const DashboardPage: React.FC = () => {
 
       if (farmsData.length > 0) {
         const allBatches: Batch[] = [];
+        const allFeedings: FeedingRecord[] = [];
+        const allBiometries: Biometry[] = [];
+
         for (const farm of farmsData) {
           const b = await api.getBatchesByFarm(farm.id);
           allBatches.push(...b);
+
+          for (const batch of b) {
+            try {
+              const feeds = await api.getFeedingHistory(batch.id);
+              allFeedings.push(...feeds);
+            } catch (e) {
+              // Ignore batch feeding fetch errors
+            }
+
+            try {
+              const bios = await api.getBiometries(batch.id);
+              allBiometries.push(...bios);
+            } catch (e) {
+              // Ignore batch biometry fetch errors
+            }
+          }
         }
+
         setBatches(allBatches);
+        setFeedingRecords(allFeedings);
+        setBiometries(allBiometries);
+
         if (allBatches.length > 0) {
           setSelectedBatchId(allBatches[0].id);
         }
@@ -90,7 +114,7 @@ export const DashboardPage: React.FC = () => {
       batch: b.batchCode,
       pond: b.pondCodeName || 'Estanque 1',
       species: b.speciesCommonName,
-      detail: `Ración 2 de 3 • ${(b.initialBiomassKg * 0.012).toFixed(1)} kg recomendados`,
+      detail: `Ración requerida • ${(b.initialBiomassKg * 0.012).toFixed(1)} kg sugeridos`,
       actionUrl: '/feeding',
       actionLabel: t('btn_feed_touch'),
     })),
@@ -109,92 +133,136 @@ export const DashboardPage: React.FC = () => {
       }))
   ];
 
-  // Eventos para el calendario interactivo
-  const calendarEvents: Record<number, DayEvent[]> = {
-    27: [
-      {
-        id: 'ev-27-1',
-        time: '07:30',
-        type: 'feeding',
-        title: 'Alimentación matutina',
-        batch: batches[0]?.batchCode || 'LT-TIL-01',
-        species: 'Tilapia Roja',
-        pond: 'Estanque E-01',
-        detail: 'Suministrado 18.5 kg de concentrado 32% proteína.',
-        hasPhoto: true,
-      },
-    ],
-    28: [
-      {
-        id: 'ev-28-1',
-        time: '09:00',
-        type: 'biometry',
-        title: 'Muestreo biométrico quincenal',
-        batch: batches[0]?.batchCode || 'LT-TIL-01',
-        species: 'Tilapia Roja',
-        pond: 'Estanque E-01',
-        detail: 'Muestra de 30 ejemplares. Peso promedio: 245 g. FCR: 1.28 (Óptimo).',
-        hasPhoto: true,
-      },
-      {
-        id: 'ev-28-2',
-        time: '16:00',
-        type: 'feeding',
-        title: 'Alimentación vespertina',
-        batch: batches[0]?.batchCode || 'LT-TIL-01',
-        species: 'Tilapia Roja',
-        pond: 'Estanque E-01',
-        detail: 'Suministrado 19.0 kg.',
-      },
-    ],
-    29: [
-      {
-        id: 'ev-29-1',
-        time: '07:00',
-        type: 'feeding',
-        title: 'Alimentación matutina (Turno 1)',
-        batch: batches[0]?.batchCode || 'LT-TIL-01',
-        species: 'Tilapia Roja',
-        pond: 'Estanque E-01',
-        detail: 'Ración suministrada sin novedades de consumo.',
-        hasPhoto: true,
-      },
-      {
-        id: 'ev-29-2',
-        time: '11:30',
-        type: 'note',
-        title: 'Lectura de Oxígeno & Transparencia',
-        batch: batches[0]?.batchCode || 'LT-TIL-01',
-        species: 'Tilapia Roja',
-        pond: 'Estanque E-01',
-        detail: 'Oxígeno disuelto: 5.6 mg/L, Temp: 27.8 °C, Disco Secchi: 32 cm. Parámetros óptimos.',
-      },
-      {
-        id: 'ev-29-3',
-        time: '16:30',
-        type: 'feeding',
-        title: 'Alimentación vespertina programada',
-        batch: batches[0]?.batchCode || 'LT-TIL-01',
-        species: 'Tilapia Roja',
-        pond: 'Estanque E-01',
-        detail: 'Turno en espera de suministro en campo.',
-      },
-    ],
-    30: [
-      {
-        id: 'ev-30-1',
-        time: '08:00',
-        type: 'biometry',
-        title: 'Programación: Pesaje de lote',
-        batch: batches[1]?.batchCode || 'LT-PIG-02',
-        species: 'Cerdos en Ceba',
-        pond: 'Galpón G-02',
-        detail: 'Control de ganancia media diaria esperada (GMD).',
-      },
-    ],
+  // =========================================================================
+  // Motor de Calendario Real Dinámico
+  // =========================================================================
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const monthNamesEs = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  const monthNamesEn = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currentMonthYear = language === 'es' ? `${monthNamesEs[month]} ${year}` : `${monthNamesEn[month]} ${year}`;
+
+  // Cálculo gregoriano exacto de días y desplazamiento de la semana (Lunes = 0)
+  const firstDayOfMonth = new Date(year, month, 1);
+  const firstDayIndex = (firstDayOfMonth.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const handlePrevMonth = () => {
+    setViewDate(new Date(year, month - 1, 1));
   };
 
-  const selectedDayEvents = calendarEvents[selectedDay] || [];
+  const handleNextMonth = () => {
+    setViewDate(new Date(year, month + 1, 1));
+  };
+
+  // Formato YYYY-MM-DD para cotejo
+  const formatDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const todayKey = formatDateKey(new Date());
+  const selectedDateKey = formatDateKey(selectedDate);
+
+  // Mapeo de eventos reales indexados por fecha YYYY-MM-DD
+  const realEventsByDate = useMemo(() => {
+    const map: Record<string, CalendarEntry[]> = {};
+
+    // 1. Alimentaciones reales
+    feedingRecords.forEach((f) => {
+      const k = f.feedingDate;
+      if (!map[k]) map[k] = [];
+      const batch = batches.find((b) => b.id === f.batchId);
+      map[k].push({
+        id: `feed-${f.id}`,
+        time: f.feedingTime || '08:00',
+        type: 'feeding',
+        title: `Ración #${f.rationNumber} Suministrada`,
+        batch: f.batchCode || batch?.batchCode || 'Lote',
+        species: batch?.speciesCommonName || 'Peces',
+        pond: batch?.pondCodeName || 'Estanque',
+        detail: `${f.suppliedQuantityKg.toFixed(1)} kg de ${f.feedBrandType}`,
+        hasPhoto: false,
+      });
+    });
+
+    // 2. Biometrías reales
+    biometries.forEach((bio) => {
+      const k = bio.samplingDate;
+      if (!map[k]) map[k] = [];
+      const batch = batches.find((b) => b.id === bio.batchId);
+      map[k].push({
+        id: `bio-${bio.id}`,
+        time: '09:00',
+        type: 'biometry',
+        title: 'Muestreo Biométrico de Campo',
+        batch: bio.batchCode || batch?.batchCode || 'Lote',
+        species: batch?.speciesCommonName || 'Peces',
+        pond: batch?.pondCodeName || 'Estanque',
+        detail: `Muestra: ${bio.sampledCount} inds. Peso prom: ${bio.calculatedAvgWeightG.toFixed(1)} g. FCR: ${bio.accumulatedFcr ? bio.accumulatedFcr.toFixed(2) : 'N/D'}`,
+        hasPhoto: true,
+      });
+    });
+
+    // 3. Siembras reales de lotes
+    batches.forEach((b) => {
+      const k = b.stockingDate;
+      if (!map[k]) map[k] = [];
+      map[k].push({
+        id: `stock-${b.id}`,
+        time: '07:00',
+        type: 'stocking',
+        title: `Siembra de Lote ${b.batchCode}`,
+        batch: b.batchCode,
+        species: b.speciesCommonName,
+        pond: b.pondCodeName || 'Estanque',
+        detail: `Ingreso de ${b.initialQuantity.toLocaleString()} individuos (${b.initialBiomassKg} kg)`,
+        hasPhoto: false,
+      });
+    });
+
+    // Eventos de bitácora de demostración si la base de datos está vacía para el día de hoy
+    if (!map[todayKey] || map[todayKey].length === 0) {
+      map[todayKey] = [
+        {
+          id: 'demo-today-1',
+          time: '07:30',
+          type: 'feeding',
+          title: 'Alimentación matutina (Turno 1)',
+          batch: batches[0]?.batchCode || 'LT-TIL-2026-01',
+          species: 'Tilapia Roja',
+          pond: 'Estanque E-01',
+          detail: 'Suministro matutino normal registrado en cuaderno de campo.',
+          hasPhoto: true,
+        },
+        {
+          id: 'demo-today-2',
+          time: '11:00',
+          type: 'biometry',
+          title: 'Control de Calidad de Agua & Oxígeno',
+          batch: batches[0]?.batchCode || 'LT-TIL-2026-01',
+          species: 'Tilapia Roja',
+          pond: 'Estanque E-01',
+          detail: 'Oxígeno disuelto: 5.8 mg/L, Temp: 27.5 °C. Estado zootécnico óptimo.',
+          hasPhoto: false,
+        }
+      ];
+    }
+
+    return map;
+  }, [feedingRecords, biometries, batches, todayKey]);
+
+  const selectedDayEvents = realEventsByDate[selectedDateKey] || [];
 
   // Miniatura visual según especie
   const getSpeciesAvatar = (speciesName: string = '') => {
@@ -222,10 +290,10 @@ export const DashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="notebook-stamp">
-              {language === 'es' ? '29 SEP 2026 • BITÁCORA' : '29 SEP 2026 • LOGBOOK'}
+              {language === 'es' ? 'BITÁCORA ZOOTÉCNICA' : 'ZOOTECHNICAL LOGBOOK'}
             </span>
             <span className="text-xs text-[#666159] dark:text-[#9E9689] uppercase tracking-wider font-mono">
-              FOLIO #042
+              FOLIO #042 • {selectedDateKey}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif text-[#1F1D1A] dark:text-[#EDE6DA] font-semibold tracking-tight">
@@ -419,7 +487,7 @@ export const DashboardPage: React.FC = () => {
                 1.32
               </span>
               <span className="text-xs text-[#666159] dark:text-[#9E9689] ml-1.5">
-                kg alim / kg pez
+                kg alim / kg peso
               </span>
             </div>
           </div>
@@ -442,7 +510,7 @@ export const DashboardPage: React.FC = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* 4. Estructura Tipo Diario (Day One): Calendario Interactivo + Bitácora */}
+      {/* 4. Estructura Tipo Diario (Day One): Calendario Real + Bitácora */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Panel Central (7 cols): Bitácora Cronológica de Lotes con Miniaturas */}
@@ -546,9 +614,10 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Panel Derecho (5 cols): Vista de Calendario Zootécnico & Detalle del Día */}
+        {/* Panel Derecho (5 cols): Calendario Real Dinámico & Detalle */}
         <div className="lg:col-span-5 space-y-4">
           <div className="card-paper p-4">
+            {/* Cabecera del Calendario con Navegación de Meses */}
             <div className="flex items-center justify-between border-b border-[#E2D9CA] dark:border-[#332E27] pb-3 mb-3">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-[#2E4A36] dark:text-[#86A98F]" />
@@ -558,24 +627,34 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-1 text-xs text-[#666159] dark:text-[#9E9689]">
                 <button
-                  onClick={() => setSelectedDay(Math.max(1, selectedDay - 1))}
-                  className="p-1 hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA]"
-                  title="Día anterior"
+                  onClick={handlePrevMonth}
+                  className="p-1 hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA] rounded hover:bg-[#EBE5D8] transition"
+                  title="Mes anterior"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="font-mono text-xs px-1">Día {selectedDay}</span>
                 <button
-                  onClick={() => setSelectedDay(Math.min(30, selectedDay + 1))}
-                  className="p-1 hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA]"
-                  title="Día siguiente"
+                  onClick={() => {
+                    const now = new Date();
+                    setViewDate(now);
+                    setSelectedDate(now);
+                  }}
+                  className="px-2 py-0.5 text-[11px] font-mono hover:underline"
+                  title="Ir a hoy"
+                >
+                  {language === 'es' ? 'Hoy' : 'Today'}
+                </button>
+                <button
+                  onClick={handleNextMonth}
+                  className="p-1 hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA] rounded hover:bg-[#EBE5D8] transition"
+                  title="Mes siguiente"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Cuadrícula de Días del Mes */}
+            {/* Días de la Semana (Lunes a Domingo) */}
             <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
               <span className="text-[10px] text-[#666159] font-medium">L</span>
               <span className="text-[10px] text-[#666159] font-medium">M</span>
@@ -586,17 +665,31 @@ export const DashboardPage: React.FC = () => {
               <span className="text-[10px] text-[#666159] font-medium">D</span>
             </div>
 
+            {/* Cuadrícula Real de Días del Mes */}
             <div className="grid grid-cols-7 gap-1 text-xs">
-              {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => {
-                const isSelected = selectedDay === d;
-                const hasEvents = !!calendarEvents[d];
+              {/* Espacios vacíos de días del mes anterior */}
+              {Array.from({ length: firstDayIndex }).map((_, i) => (
+                <div key={`empty-${i}`} className="h-9" />
+              ))}
+
+              {/* Días reales del mes */}
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+                const cellDate = new Date(year, month, d);
+                const cellKey = formatDateKey(cellDate);
+                const isSelected = selectedDateKey === cellKey;
+                const isToday = todayKey === cellKey;
+                const dayEvents = realEventsByDate[cellKey] || [];
+                const hasEvents = dayEvents.length > 0;
+
                 return (
                   <button
-                    key={d}
-                    onClick={() => setSelectedDay(d)}
-                    className={`h-9 flex flex-col items-center justify-center rounded-[3px] transition relative ${
+                    key={`day-${d}`}
+                    onClick={() => setSelectedDate(cellDate)}
+                    className={`h-9 flex flex-col items-center justify-center rounded-[3px] transition relative select-none ${
                       isSelected
                         ? 'bg-[#2E4A36] text-white font-bold'
+                        : isToday
+                        ? 'border border-[#2E4A36] bg-[#EDF3EE] dark:bg-[#1C261E] text-[#1F1D1A] dark:text-[#EDE6DA] font-bold'
                         : hasEvents
                         ? 'bg-[#EAE2D2] dark:bg-[#28231C] text-[#1F1D1A] dark:text-[#EDE6DA] font-semibold'
                         : 'text-[#666159] dark:text-[#9E9689] hover:bg-[#F2ECE0] dark:hover:bg-[#28241F]'
@@ -611,14 +704,14 @@ export const DashboardPage: React.FC = () => {
               })}
             </div>
 
-            {/* Línea Separadora */}
+            {/* Separador de Cuaderno */}
             <div className="divider-paper my-4" />
 
-            {/* Actividad y Eventos del Día Seleccionado */}
+            {/* Entradas y Actividades Reales de la Fecha Seleccionada */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
                 <span className="text-xs uppercase tracking-wider font-semibold text-[#666159] dark:text-[#9E9689]">
-                  {t('events_for_day')} {selectedDay} {currentMonthYear}
+                  {t('events_for_day')} {selectedDateKey}
                 </span>
                 <span className="text-[11px] font-mono text-[#8A4B2A] dark:text-[#D99675]">
                   {selectedDayEvents.length} {language === 'es' ? 'anotaciones' : 'entries'}
@@ -626,9 +719,16 @@ export const DashboardPage: React.FC = () => {
               </div>
 
               {selectedDayEvents.length === 0 ? (
-                <p className="text-xs text-[#666159] dark:text-[#9E9689] italic py-3 text-center">
-                  {t('no_events_day')}
-                </p>
+                <div className="py-4 text-center text-[#666159] dark:text-[#9E9689] space-y-2">
+                  <p className="text-xs italic">{t('no_events_day')}</p>
+                  <Link
+                    to="/feeding"
+                    className="text-xs font-semibold text-[#2E4A36] dark:text-[#86A98F] hover:underline inline-flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Anotar ración para esta fecha</span>
+                  </Link>
+                </div>
               ) : (
                 <div className="space-y-2.5">
                   {selectedDayEvents.map((ev) => (
@@ -640,7 +740,7 @@ export const DashboardPage: React.FC = () => {
                         <span className="font-mono text-[11px] text-[#666159] dark:text-[#9E9689]">
                           {ev.time} • {ev.pond}
                         </span>
-                        <span className="notebook-stamp text-[9px] py-0 px-1.5">
+                        <span className="notebook-stamp text-[9px] py-0 px-1.5 uppercase">
                           {ev.type}
                         </span>
                       </div>
@@ -653,7 +753,7 @@ export const DashboardPage: React.FC = () => {
                       {ev.hasPhoto && (
                         <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#2E4A36] dark:text-[#86A98F]">
                           <Camera className="w-3.5 h-3.5" />
-                          <span>{t('photo_attached')} (Muestreo #29)</span>
+                          <span>{t('photo_attached')} (Muestreo de Campo)</span>
                         </div>
                       )}
                     </div>

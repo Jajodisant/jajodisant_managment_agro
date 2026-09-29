@@ -362,23 +362,29 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Frontend PWA Offline-First:** Interfaz completa en React 18 + TypeScript + TailwindCSS + Dexie.js (IndexedDB) con sincronización automática de raciones de campo (PR #8).
   * [x] **Dockerización Multi-Stage:** Dockerfile para Backend (Maven + JRE 21 Alpine) y Frontend (Node + Nginx Alpine) orquestados mediante docker-compose (PR #8).
 
-* **Fase 2: Experiencia Móvil, Temas, Idiomas & Optimización Financiera (Meses 4 - 5):**
-  * [ ] **PWA Instalable como App Nativa:** Botón de instalación en pantalla de inicio de smartphone (`beforeinstallprompt`).
-  * [ ] **Sistema de Temas:** Selector de Modo Claro (sol de campo) y Modo Oscuro (noche y ahorro OLED) con paleta agropecuaria.
-  * [ ] **Internacionalización (i18n):** Selector de idioma Español (predeterminado) e Inglés.
-  * [ ] **Algoritmo de Cosecha/Venta Óptima (HU-07):** Detección de FCR marginal decreciente vs precio de mercado en pie ($/kg).
-  * [ ] Prorrateo de costos indirectos y depreciación de activos (estanques, aireadores, motobombas).
+* **Fase 2: Rediseño Cuaderno Zootécnico, Calendario Real, Temas & i18n — [✅ 100% COMPLETADA]:**
+  * [x] **Identidad Visual de Cuaderno/Bitácora de Campo:** Paleta papel crema (`#F4EFE3`), marfil (`#FBF8F1`), texto tinta (`#1F1D1A`), acentos verde bosque (`#2E4A36`), tierra (`#8A4B2A`) y azul pizarra (`#3B5568`).
+  * [x] **Tipografía Editorial:** `Source Serif 4` para cabeceras y títulos; `IBM Plex Sans` / `Inter` con números tabulares (`tabular-nums`).
+  * [x] **Navegación Responsive Day One:** Barra lateral de 3 capítulos en escritorio y barra inferior de 5 pestañas táctiles (≥ 48 px) en celular.
+  * [x] **Inicio Orientado a Tareas:** Sección "Pendiente Hoy" (alimentaciones, muestreos, alertas) y KPIs en una sola fila con estados vacíos útiles.
+  * [x] **Calendario Real Dinámico:** Motor gregoriano exacto con navegación mensual, marcadores de actividad y sincronización con registros reales de campo.
+  * [x] **PWA Móvil Discreta:** Instalación en pantalla de inicio integrada sutilmente en pie de menú y ajustes (sin banners invasivos).
+  * [x] **Sistema de Temas:** Modo claro por defecto (óptimo bajo el sol en campo) y modo oscuro opcional.
+  * [x] **Internacionalización Dinámica (i18n):** Selector bilingüe Español (predeterminado) e Inglés reactivo en toda la app.
+  * [x] **Unificación Total:** Granjas, Lotes, Biometrías, Alimentación y Finanzas homogeneizadas al 100% en estilo cuaderno.
 
-* **Fase 3: Módulo Porcícola Especializado (Meses 6 - 7):**
-  * [ ] Infraestructura porcina: Galpones, corrales ($m^2$, comederos, bebederos chupete).
-  * [ ] Ciclo de vida porcino: Lotes de lechones, etapas nutricionales (Precebo, Levante, Ceba).
-  * [ ] Muestreos en báscula, GMD ($g/\text{día}$) y FCR porcino en tiempo real.
-  * [ ] Costo de producción en pie por cerdo y proyección al frigorífico.
+* **Fase 3: Biblioteca Técnica & Enciclopedia Zootécnica — [✅ 100% COMPLETADA]:**
+  * [x] **Capítulo I: Piscicultura de Precisión:** Parámetros de agua (OD, pH, NH3, Secchi), densidad de siembra, FCR y sanidad de Tilapia y Trucha.
+  * [x] **Capítulo II: Porcicultura de Precisión:** Alimentación por fases (precebo, levante, ceba), bioseguridad, vacío sanitario y espacio de corral ($m^2$).
+  * [x] **Tablas de Cifras de Referencia:** Parámetros óptimos, de alerta y críticos con unidades zootécnicas estandarizadas.
+  * [x] **Sección Errores Comunes:** Guía práctica de fallos operativos habituales en campo.
+  * [x] **Etiquetado y Buscador:** Estado de validación técnica ("Borrador por revisar" / "Aprobado") y buscador reactivo en vivo.
 
-* **Fase 4: Agro-IA Asistencial (RAG) & Alertas (Meses 8 - 9):**
-  * [ ] Base de conocimiento vectorial en `pgvector` con guías oficiales de sanidad de peces y cerdos.
-  * [ ] Consultorio veterinario en lenguaje natural (HU-12) para diagnóstico asistido sin alucinaciones.
-  * [ ] Alertas sanitarias preventivas y monitoreo ambiental.
+* **Fase 4: Estadísticas & Curvas Comparativas (Próxima):**
+  * [ ] Gráficos de línea fina y barras planas con la paleta de cuaderno.
+  * [ ] Curvas de crecimiento, evolución de biomasa viva y FCR ponderado por lote.
+  * [ ] Comparativo de rendimiento y costos entre especies (peces vs. cerdos).
+  * [ ] Exportación de reportes zootécnicos.
 
 ---
 
