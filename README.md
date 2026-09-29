@@ -1,7 +1,7 @@
 <div align="center">
 
-# 🐟 AGRO-AI MANAGEMENT SYSTEM
-### *Plataforma Inteligente de Gestión Agropecuaria & Asesor de Decisiones con IA*
+# 🐟🐖 AGRO-AI MANAGEMENT SYSTEM
+### *Plataforma Inteligente de Precisión para Peces & Cerdos con IA y Optimización Financiera*
 
 [![Java 21](https://img.shields.io/badge/Java-21_LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot 3.3.4](https://img.shields.io/badge/Spring_Boot-3.3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -12,12 +12,12 @@
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](#licencia)
 
 <p align="center">
-  <b>Optimizando la conversión alimenticia, costos en tiempo real y toma de decisiones zootécnicas en campo mediante arquitecturas Clean Architecture, Offline-First (PWA) e Inteligencia Artificial RAG.</b>
+  <b>Optimizando la conversión alimenticia (FCR), costos en tiempo real y toma de decisiones zootécnicas en campo mediante arquitecturas Clean Architecture, Offline-First (PWA), optimización de cosecha/sacrificio e Inteligencia Artificial RAG para Acuicultura y Porcicultura.</b>
 </p>
 
 [Visión General](#-visión-general) •
 [Arquitectura](#-arquitectura-del-sistema) •
-[Características](#-capacidades-y-reglas-zootécnicas) •
+[Capacidades Zootécnicas](#-capacidades-y-reglas-zootécnicas) •
 [Guía de Instalación](#-guía-paso-a-paso-de-instalación-y-uso) •
 [Referencia de API](#-referencia-rápida-de-la-api-rest) •
 [Roadmap](#-roadmap-y-estado-de-avance) •
@@ -31,13 +31,14 @@
 
 El **Sistema de Gestión Agropecuaria (`AGRO-AI-SYS`)** es una solución corporativa diseñada para transformar la administración empírica de granjas en una operación de **precisión basada en datos biológicos y financieros**. 
 
-Inicia con un **MVP de alta especialización en Acuicultura (Piscicultura intensiva y semi-intensiva)** enfocado en especies comerciales de alto impacto (**Tilapia Roja/Negra, Trucha Arcoíris, Cachama**), con una arquitectura modular escalable hacia **Ganadería Bovina** y **Agricultura de Precisión**.
+Está especializado exclusivamente en los dos subsectores de mayor intensidad alimenticia y retorno marginal: **Acuicultura (Piscicultura: Tilapia, Trucha, Cachama)** y **Porcicultura (Cerdos de Ceba y Lechones)**.
 
 ### 🎯 Problemas Críticos que Resuelve
-1. **Desperdicio de Alimento (65%–75% del costo de producción):** Cálculo automatizado de raciones según curvas nutricionales por gramaje de pez, evitando la sobrealimentación y el deterioro del agua.
-2. **Ceguera Financiera del Ciclo:** Costeo acumulado en tiempo real por kilogramo producido ($/kg vivo) cruzando insumos directos (alevinos, concentrado) y costos indirectos.
-3. **Pérdida de Datos en Campo:** Operación **Offline-First (PWA)** que permite al operario registrar alimentación y muestreos en la orilla del estanque sin cobertura celular, sincronizando automáticamente al reconectar.
-4. **Respuesta Tardía a Mortalidades:** Bitácora asistida con IA (RAG sobre `pgvector`) para diagnosticar anomalías en parámetros de agua (anoxia, amonio, patologías).
+1. **Desperdicio de Alimento (65%–75% del costo de producción):** Cálculo automatizado de raciones según curvas nutricionales por gramaje de pez y peso en báscula del cerdo, evitando el sobreconsumo y el deterioro ambiental.
+2. **Pérdida por Alimentación en Rendimiento Decreciente:** Detección matemática del punto de inflexión biológico para alertar la fecha exacta de venta/cosecha antes de que el FCR marginal genere pérdidas.
+3. **Ceguera Financiera del Ciclo:** Costeo acumulado en tiempo real por kilogramo producido ($/kg vivo) cruzando insumos directos (alevinos, concentrado, fármacos) y costos indirectos prorrateados.
+4. **Pérdida de Datos en Campo:** Operación **Offline-First (PWA)** instalable en el celular que permite registrar raciones y pesajes a la orilla del estanque o dentro del galpón sin internet, sincronizando automáticamente al reconectar.
+5. **Diagnóstico Veterinario Oportuno:** Asistente con IA (RAG sobre `pgvector`) para diagnosticar anomalías clínicas en agua (anoxia, amonio) o en cerdos (síntomas respiratorios/digestivos).
 
 ---
 
@@ -347,7 +348,7 @@ jajodisant_managment_agro/
 Progreso General del MVP (Fase 1): [████████████████████████████████████████] 100%
 ```
 
-* **Fase 1: MVP Piscícola Operativo & Costos Directos (Meses 1 - 3):**
+* **Fase 1: MVP Piscícola Operativo & Costos Directos (Meses 1 - 3) — [✅ 100% COMPLETADA]:**
   * [x] **Infraestructura Base:** Docker Compose, PostgreSQL 16 con `pgvector`, Spring Boot 3.3.4 (PR #1).
   * [x] **Base de Datos:** Migración Flyway `V1__init_schema.sql` con 9 tablas, índices y vistas (PR #2).
   * [x] **Dominio JPA:** 10 entidades mapeadas y probadas en compilación (PR #3).
@@ -361,15 +362,23 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Frontend PWA Offline-First:** Interfaz completa en React 18 + TypeScript + TailwindCSS + Dexie.js (IndexedDB) con sincronización automática de raciones de campo (PR #8).
   * [x] **Dockerización Multi-Stage:** Dockerfile para Backend (Maven + JRE 21 Alpine) y Frontend (Node + Nginx Alpine) orquestados mediante docker-compose (PR #8).
 
-* **Fase 2: Motor Financiero Completo & Cosecha Óptima (Meses 4 - 5):**
-  * [ ] Costeo indirecto (energía, depreciación de geomembrana y motobombas, jornales).
-  * [ ] Algoritmo de punto de rendimiento decreciente y ventana óptima de cosecha (HU-07).
+* **Fase 2: Experiencia Móvil, Temas, Idiomas & Optimización Financiera (Meses 4 - 5):**
+  * [ ] **PWA Instalable como App Nativa:** Botón de instalación en pantalla de inicio de smartphone (`beforeinstallprompt`).
+  * [ ] **Sistema de Temas:** Selector de Modo Claro (sol de campo) y Modo Oscuro (noche y ahorro OLED) con paleta agropecuaria.
+  * [ ] **Internacionalización (i18n):** Selector de idioma Español (predeterminado) e Inglés.
+  * [ ] **Algoritmo de Cosecha/Venta Óptima (HU-07):** Detección de FCR marginal decreciente vs precio de mercado en pie ($/kg).
+  * [ ] Prorrateo de costos indirectos y depreciación de activos (estanques, aireadores, motobombas).
 
-* **Fase 3: Agro-IA (RAG), Alertas y Expansión Multiespecie (Meses 6 - 8):**
-  * [ ] Activación de embeddings en `pgvector` y conexión con `Spring AI`.
-  * [ ] Bitácora con diagnóstico asistido por LLM ante anomalías en estanques (HU-08).
-  * [ ] Alertas climáticas y estacionales preventivas (HU-09).
-  * [ ] Expansión multiespecie a Ganadería y Agricultura.
+* **Fase 3: Módulo Porcícola Especializado (Meses 6 - 7):**
+  * [ ] Infraestructura porcina: Galpones, corrales ($m^2$, comederos, bebederos chupete).
+  * [ ] Ciclo de vida porcino: Lotes de lechones, etapas nutricionales (Precebo, Levante, Ceba).
+  * [ ] Muestreos en báscula, GMD ($g/\text{día}$) y FCR porcino en tiempo real.
+  * [ ] Costo de producción en pie por cerdo y proyección al frigorífico.
+
+* **Fase 4: Agro-IA Asistencial (RAG) & Alertas (Meses 8 - 9):**
+  * [ ] Base de conocimiento vectorial en `pgvector` con guías oficiales de sanidad de peces y cerdos.
+  * [ ] Consultorio veterinario en lenguaje natural (HU-12) para diagnóstico asistido sin alucinaciones.
+  * [ ] Alertas sanitarias preventivas y monitoreo ambiental.
 
 ---
 
