@@ -8,38 +8,58 @@ export default {
   theme: {
     extend: {
       colors: {
-        agro: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
-          950: '#052e16',
+        paper: {
+          DEFAULT: '#F4EFE3', // Fondo papel crema
+          surface: '#FBF8F1', // Superficies y tarjetas
+          dark: '#141210',    // Fondo oscuro sobrio
+          'dark-surface': '#1F1C18', // Superficie oscura
+          border: '#E2D9CA', // Línea fina 1px
+          line: '#DDD4C4',   // Línea separadora
+          dim: '#EBE5D8',
         },
-        aqua: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
+        ink: {
+          DEFAULT: '#1F1D1A', // Texto tinta negra cálida
+          muted: '#666159',   // Texto secundario
+          faint: '#948D81',   // Metadatos y bordes secundarios
+          light: '#EDE6DA',   // Texto tinta en fondo oscuro
+          'light-muted': '#9E9689',
         },
-        swine: {
-          50: '#fff1f2',
-          100: '#ffe4e6',
-          500: '#f43f5e',
-          600: '#e11d48',
-          700: '#be123c',
+        forest: {
+          DEFAULT: '#2E4A36', // Verde bosque acento principal
+          light: '#EDF3EE',   // Fondo acento suave
+          hover: '#243B2B',
+          dark: '#86A98F',
+        },
+        earth: {
+          DEFAULT: '#8A4B2A', // Tierra (porcicultura)
+          light: '#F8EFEA',
+          hover: '#6E3A20',
+          dark: '#D99675',
+        },
+        slate: {
+          blue: '#3B5568',    // Azul pizarra (piscicultura)
+          'blue-light': '#EDF2F5',
+          'blue-hover': '#2C404E',
+          'blue-dark': '#8EA8BA',
+        },
+        status: {
+          green: '#2A6B3D',   // Semáforo óptimo
+          amber: '#9C631B',   // Semáforo advertencia
+          red: '#A32A26',     // Semáforo crítico
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['"Source Serif 4"', 'Libre Baskerville', 'Georgia', 'serif'],
+        sans: ['"IBM Plex Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      borderRadius: {
+        DEFAULT: '5px',
+        sm: '4px',
+        md: '6px',
+        lg: '8px',
+      },
+      borderWidth: {
+        DEFAULT: '1px',
       }
     },
   },
