@@ -395,6 +395,15 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Ergonomía Táctil en Campo:** Objetivos de pulsación $\ge 48\text{ px}$ en botones primarios/secundarios y fuentes $\ge 16\text{ px}$ en campos de texto móviles para evitar auto-zoom indeseado.
   * [x] **Integridad Operativa:** Conservación intacta del 100% de la lógica de negocio, endpoints REST y persistencia IndexedDB/Dexie.
 
+* **Fase 6: Motor de Optimización de Cosecha / Sacrificio (HU-07) — [✅ 100% COMPLETADA]:**
+  * [x] **Algoritmo de Inflexión Biológica:** Cálculo de FCR marginal por periodo y comparación matemática contra el precio de venta mayorista en pie ($/kg).
+  * [x] **Cálculo de Costo Marginal de Alimento:** Detección automática del punto donde alimentar cuesta más de lo que paga el mercado (evita pérdidas acumuladas).
+  * [x] **Diagnóstico y Ventana Óptima de Venta:** Estados zootécnicos `OPTIMAL_HARVEST`, `APPROACHING_HARVEST`, `GROWTH_PHASE` con fechas sugeridas de faenado.
+  * [x] **Endpoints REST:** `GET /api/v1/advisory/harvest-optimization/{batchId}` y `/farm/{farmId}` con calibración dinámica de precios.
+  * [x] **Tablero Interactivo en Frontend:** Pestaña dedicada en Estadísticas con simulador de precio de mercado en vivo, ficha de decisión y tabla general de lotes.
+  * [x] **Alertas en Bitácora:** Detección e inclusión automática en "Pendiente Hoy" en el Dashboard.
+  * [x] **Pruebas Automatizadas:** 58 tests pasando en backend (`mvn test` -> `BUILD SUCCESS`).
+
 ---
 
 ## 🔀 Flujo de Trabajo y Metodología (Git Flow)

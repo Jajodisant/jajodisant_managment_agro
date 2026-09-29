@@ -151,6 +151,10 @@ public class BatchService {
         return BatchResponse.fromEntity(updated, false, BigDecimal.ZERO);
     }
 
+    public List<Batch> findBatchEntitiesByFarm(UUID farmId) {
+        return batchRepository.findByFarmId(farmId);
+    }
+
     public Batch findBatchEntity(UUID batchId) {
         return batchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", batchId));

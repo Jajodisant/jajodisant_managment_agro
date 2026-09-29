@@ -13,10 +13,16 @@ import {
   Printer,
   FileSpreadsheet,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Scale,
+  Sparkles,
+  Info,
+  Clock,
+  ArrowRight,
+  ShieldAlert
 } from 'lucide-react';
 import { api } from '../services/api';
-import { Farm, Batch, Biometry, FeedingRecord } from '../types';
+import { Farm, Batch, Biometry, FeedingRecord, HarvestOptimization } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 
 export const StatsPage: React.FC = () => {
@@ -30,7 +36,14 @@ export const StatsPage: React.FC = () => {
   const [selectedFarmId, setSelectedFarmId] = useState<string>('all');
   const [selectedSpeciesFilter, setSelectedSpeciesFilter] = useState<'all' | 'peces' | 'cerdos'>('all');
   const [dateRange, setDateRange] = useState<'30d' | '90d' | 'all'>('all');
-  const [activeTab, setActiveTab] = useState<'curvas' | 'comparativo' | 'tabla'>('curvas');
+  const [activeTab, setActiveTab] = useState<'curvas' | 'optimizacion' | 'comparativo' | 'tabla'>('curvas');
+
+  // HU-07 Estado de Optimización de Cosecha
+  const [selectedOptimizationBatchId, setSelectedOptimizationBatchId] = useState<string>('');
+  const [marketPriceInput, setMarketPriceInput] = useState<number>(12000);
+  const [optimizationData, setOptimizationData] = useState<HarvestOptimization | null>(null);
+  const [farmOptimizations, setFarmOptimizations] = useState<HarvestOptimization[]>([]);
+  const [loadingOptimization, setLoadingOptimization] = useState<boolean>(false);
 
   useEffect(() => {
     loadData();
@@ -49,6 +62,9 @@ export const StatsPage: React.FC = () => {
           allBatches.push(...b);
         }
         setBatches(allBatches);
+        if (allBatches.length > 0) {
+          setSelectedOptimizationBatchId(allBatches[0].id);
+        }
       }
     } catch (err) {
       console.error('Error cargando estadísticas:', err);
@@ -56,6 +72,44 @@ export const StatsPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const loadOptimizationData = async (batchId: string, price: number) => {
+    try {
+      setLoadingOptimization(true);
+      const res = await api.getHarvestOptimization(batchId, price);
+      setOptimizationData(res);
+    } catch (err) {
+      console.error('Error al evaluar optimización de cosecha:', err);
+    } finally {
+      setLoadingOptimization(false);
+    }
+  };
+
+  const loadFarmOptimizations = async (price: number) => {
+    try {
+      const results: HarvestOptimization[] = [];
+      const farmsToQuery = selectedFarmId === 'all' ? farms : farms.filter((f) => f.id === selectedFarmId);
+      for (const farm of farmsToQuery) {
+        const farmRes = await api.getFarmHarvestOptimizations(farm.id, price);
+        results.push(...farmRes);
+      }
+      setFarmOptimizations(results);
+    } catch (err) {
+      console.error('Error al evaluar granjas para cosecha:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'optimizacion') {
+      const targetBatchId = selectedOptimizationBatchId || (batches.length > 0 ? batches[0].id : '');
+      if (targetBatchId) {
+        loadOptimizationData(targetBatchId, marketPriceInput);
+      }
+      if (farms.length > 0) {
+        loadFarmOptimizations(marketPriceInput);
+      }
+    }
+  }, [activeTab, selectedOptimizationBatchId, selectedFarmId, batches, farms]);
 
   // Filtrado de lotes
   const filteredBatches = useMemo(() => {
@@ -251,6 +305,17 @@ export const StatsPage: React.FC = () => {
             }`}
           >
             Curvas & Gráficos
+          </button>
+          <button
+            onClick={() => setActiveTab('optimizacion')}
+            className={`px-3 py-1.5 rounded-[3px] font-medium transition flex items-center gap-1.5 ${
+              activeTab === 'optimizacion'
+                ? 'bg-[#2E4A36] text-white font-semibold'
+                : 'text-[#666159] dark:text-[#9E9689] hover:text-[#1F1D1A]'
+            }`}
+          >
+            <Scale className="w-3.5 h-3.5" />
+            <span>{language === 'es' ? 'Optimización Cosecha (HU-07)' : 'Harvest Optimization (HU-07)'}</span>
           </button>
           <button
             onClick={() => setActiveTab('comparativo')}
@@ -504,6 +569,337 @@ export const StatsPage: React.FC = () => {
               <span className="font-mono font-bold text-[#2E4A36] dark:text-[#86A98F]">
                 35,900 kg vivos combinados
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 4. Vista de Optimización de Cosecha & Inflexión Biológica (HU-07) */}
+      {/* ========================================================================= */}
+      {activeTab === 'optimizacion' && (
+        <div className="space-y-6">
+          {/* Panel de Control y Calibración de Mercado */}
+          <div className="card-paper p-5 space-y-4">
+            <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="notebook-stamp text-[10px]">MOTOR ZOOTÉCNICO HU-07</span>
+                <h3 className="font-serif font-bold text-lg text-[#1F1D1A] dark:text-[#EDE6DA] mt-0.5">
+                  {t('hu07_title')}
+                </h3>
+                <p className="text-xs text-[#666159] dark:text-[#9E9689] mt-0.5">
+                  {t('hu07_subtitle')}
+                </p>
+              </div>
+
+              {/* Selector de Lote y Precio de Mercado en Vivo */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-[#666159] dark:text-[#9E9689] block mb-1">
+                    {t('label_batch')}:
+                  </label>
+                  <select
+                    value={selectedOptimizationBatchId}
+                    onChange={(e) => setSelectedOptimizationBatchId(e.target.value)}
+                    className="bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] px-3 py-1.5 font-medium text-xs text-[#1F1D1A] dark:text-[#EDE6DA] outline-none"
+                  >
+                    {batches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.batchCode} ({b.speciesCommonName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#666159] dark:text-[#9E9689] block mb-1">
+                    {t('hu07_market_price')}:
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      step="500"
+                      min="1000"
+                      value={marketPriceInput}
+                      onChange={(e) => setMarketPriceInput(Number(e.target.value))}
+                      className="w-28 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] px-2.5 py-1.5 font-mono text-xs text-[#1F1D1A] dark:text-[#EDE6DA] outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        if (selectedOptimizationBatchId) {
+                          loadOptimizationData(selectedOptimizationBatchId, marketPriceInput);
+                          loadFarmOptimizations(marketPriceInput);
+                        }
+                      }}
+                      className="btn-secondary text-xs h-8 px-3"
+                    >
+                      Calcular
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {loadingOptimization ? (
+              <div className="py-12 text-center text-sm font-serif text-[#666159] dark:text-[#9E9689]">
+                Calculando punto de inflexión biológico y curva marginal...
+              </div>
+            ) : optimizationData ? (
+              <div className="space-y-6 pt-2">
+                {/* Diagnóstico Principal del Lote (Ficha de Decisión) */}
+                <div
+                  className={`p-5 rounded-[4px] border ${
+                    optimizationData.isPastOptimalPoint
+                      ? 'bg-[#A32A26]/10 border-[#A32A26]/40 text-[#A32A26] dark:text-[#E5807D]'
+                      : optimizationData.harvestStatus === 'OPTIMAL_HARVEST'
+                      ? 'bg-[#9C631B]/10 border-[#9C631B]/40 text-[#9C631B] dark:text-[#E0A868]'
+                      : optimizationData.harvestStatus === 'APPROACHING_HARVEST'
+                      ? 'bg-[#9C631B]/10 border-[#9C631B]/30 text-[#9C631B] dark:text-[#E0A868]'
+                      : 'bg-[#2A6B3D]/10 border-[#2A6B3D]/30 text-[#2A6B3D] dark:text-[#86A98F]'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-current/20 pb-3">
+                    <div className="flex items-center gap-2">
+                      {optimizationData.isPastOptimalPoint ? (
+                        <ShieldAlert className="w-5 h-5 shrink-0" />
+                      ) : (
+                        <Scale className="w-5 h-5 shrink-0" />
+                      )}
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider opacity-80 block">
+                          ESTADO ZOOTÉCNICO DEL LOTE {optimizationData.batchCode} ({optimizationData.speciesName})
+                        </span>
+                        <h4 className="font-serif font-bold text-base sm:text-lg">
+                          {optimizationData.recommendationTitle}
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold block opacity-75">
+                        {t('hu07_recommended_date')}
+                      </span>
+                      <span className="font-mono font-bold text-sm sm:text-base">
+                        {optimizationData.recommendedHarvestDate}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm mt-3 leading-relaxed opacity-95">
+                    {optimizationData.recommendationMessage}
+                  </p>
+                </div>
+
+                {/* Grid de 6 Cifras Clave del Punto de Inflexión */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="bg-[#F4EFE3]/80 dark:bg-[#141210]/60 p-3 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+                    <span className="text-[10px] uppercase text-[#666159] dark:text-[#9E9689] block font-semibold">
+                      Peso vs. Meta
+                    </span>
+                    <span className="font-serif font-bold text-base text-[#1F1D1A] dark:text-[#EDE6DA] metric-number block mt-1">
+                      {optimizationData.currentAvgWeightG.toFixed(1)} g
+                    </span>
+                    <span className="text-[10px] text-[#666159] dark:text-[#9E9689] font-mono">
+                      Meta: {optimizationData.targetCommercialWeightG.toFixed(0)} g
+                    </span>
+                  </div>
+
+                  <div className="bg-[#F4EFE3]/80 dark:bg-[#141210]/60 p-3 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+                    <span className="text-[10px] uppercase text-[#666159] dark:text-[#9E9689] block font-semibold">
+                      {t('hu07_marginal_fcr')}
+                    </span>
+                    <span
+                      className={`font-serif font-bold text-base metric-number block mt-1 ${
+                        optimizationData.marginalFcr > 2.0
+                          ? 'text-[#A32A26] dark:text-[#E5807D]'
+                          : optimizationData.marginalFcr > 1.6
+                          ? 'text-[#9C631B] dark:text-[#E0A868]'
+                          : 'text-[#2E4A36] dark:text-[#86A98F]'
+                      }`}
+                    >
+                      {optimizationData.marginalFcr.toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-[#666159] dark:text-[#9E9689] font-mono">
+                      FCR Acum: {optimizationData.accumulatedFcr.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="bg-[#F4EFE3]/80 dark:bg-[#141210]/60 p-3 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+                    <span className="text-[10px] uppercase text-[#666159] dark:text-[#9E9689] block font-semibold">
+                      {t('hu07_marginal_cost')}
+                    </span>
+                    <span className="font-serif font-bold text-base text-[#1F1D1A] dark:text-[#EDE6DA] metric-number block mt-1">
+                      ${optimizationData.marginalCostPerKgGain.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-[#666159] dark:text-[#9E9689] font-mono">
+                      por kg ganado
+                    </span>
+                  </div>
+
+                  <div className="bg-[#F4EFE3]/80 dark:bg-[#141210]/60 p-3 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+                    <span className="text-[10px] uppercase text-[#666159] dark:text-[#9E9689] block font-semibold">
+                      Precio en Pie
+                    </span>
+                    <span className="font-serif font-bold text-base text-[#2E4A36] dark:text-[#86A98F] metric-number block mt-1">
+                      ${optimizationData.marketPricePerKg.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-[#666159] dark:text-[#9E9689] font-mono">
+                      por kg venta
+                    </span>
+                  </div>
+
+                  <div className="bg-[#F4EFE3]/80 dark:bg-[#141210]/60 p-3 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+                    <span className="text-[10px] uppercase text-[#666159] dark:text-[#9E9689] block font-semibold">
+                      {t('hu07_marginal_margin')}
+                    </span>
+                    <span
+                      className={`font-serif font-bold text-base metric-number block mt-1 ${
+                        optimizationData.marginalProfitPerKgGain < 0
+                          ? 'text-[#A32A26] dark:text-[#E5807D]'
+                          : 'text-[#2A6B3D] dark:text-[#86A98F]'
+                      }`}
+                    >
+                      {optimizationData.marginalProfitPerKgGain > 0 ? '+' : ''}
+                      ${optimizationData.marginalProfitPerKgGain.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-[#666159] dark:text-[#9E9689] font-mono">
+                      margen $/kg
+                    </span>
+                  </div>
+
+                  <div className="bg-[#F4EFE3]/80 dark:bg-[#141210]/60 p-3 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+                    <span className="text-[10px] uppercase text-[#666159] dark:text-[#9E9689] block font-semibold">
+                      Proyección Diaria
+                    </span>
+                    <span
+                      className={`font-serif font-bold text-base metric-number block mt-1 ${
+                        optimizationData.projectedDailyProfitOrLoss < 0
+                          ? 'text-[#A32A26] dark:text-[#E5807D]'
+                          : 'text-[#2A6B3D] dark:text-[#86A98F]'
+                      }`}
+                    >
+                      {optimizationData.projectedDailyProfitOrLoss > 0 ? '+' : ''}
+                      ${optimizationData.projectedDailyProfitOrLoss.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-[#666159] dark:text-[#9E9689] font-mono">
+                      COP / día
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-[#666159] dark:text-[#9E9689]">
+                Selecciona un lote activo para calcular su punto de inflexión.
+              </div>
+            )}
+          </div>
+
+          {/* Tabla Comparativa de Cosecha de Todos los Lotes de la Granja */}
+          <div className="card-paper p-0 overflow-hidden">
+            <div className="p-4 border-b border-[#E2D9CA] dark:border-[#332E27] flex items-center justify-between bg-[#F8F4EB] dark:bg-[#181613]">
+              <div>
+                <span className="notebook-stamp text-[9px]">PANORAMA GENERAL DE COSECHA</span>
+                <h3 className="font-serif font-semibold text-base text-[#1F1D1A] dark:text-[#EDE6DA] mt-0.5">
+                  Diagnóstico y Decisión de Faenado por Lote Activo
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-[#666159] dark:text-[#9E9689]">
+                {farmOptimizations.length} lotes analizados
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm text-[#1F1D1A] dark:text-[#EDE6DA]">
+                <thead className="border-b border-[#E2D9CA] dark:border-[#332E27] text-[11px] uppercase tracking-wider font-semibold text-[#666159] dark:text-[#9E9689] bg-[#F4EFE3]/50 dark:bg-[#141210]/50 font-serif">
+                  <tr>
+                    <th className="px-4 py-3">Lote</th>
+                    <th className="px-4 py-3">Especie</th>
+                    <th className="px-4 py-3">Peso Promedio</th>
+                    <th className="px-4 py-3">FCR Marginal</th>
+                    <th className="px-4 py-3">Costo/kg Ganado</th>
+                    <th className="px-4 py-3">Margen $/kg</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Acción Recomendada</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2D9CA] dark:divide-[#332E27]">
+                  {farmOptimizations.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center text-xs text-[#666159] dark:text-[#9E9689]">
+                        No hay evaluaciones disponibles. Haz clic en "Calcular" para obtener el diagnóstico.
+                      </td>
+                    </tr>
+                  ) : (
+                    farmOptimizations.map((item) => (
+                      <tr
+                        key={item.batchId}
+                        onClick={() => {
+                          setSelectedOptimizationBatchId(item.batchId);
+                          setOptimizationData(item);
+                        }}
+                        className={`cursor-pointer transition hover:bg-[#F4EFE3]/60 dark:hover:bg-[#181613] ${
+                          selectedOptimizationBatchId === item.batchId
+                            ? 'bg-[#EDF3EE] dark:bg-[#18231C]'
+                            : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3 font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA]">
+                          {item.batchCode}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="notebook-stamp text-[10px] py-0 px-1.5">
+                            {item.speciesName}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-bold metric-number">
+                          {item.currentAvgWeightG.toFixed(1)} g
+                          <span className="text-[10px] text-[#666159] dark:text-[#9E9689] block font-normal">
+                            Meta: {item.targetCommercialWeightG.toFixed(0)} g
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-mono font-semibold">
+                          {item.marginalFcr.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 font-mono">
+                          ${item.marginalCostPerKgGain.toLocaleString()}
+                        </td>
+                        <td
+                          className={`px-4 py-3 font-bold metric-number ${
+                            item.marginalProfitPerKgGain < 0
+                              ? 'text-[#A32A26] dark:text-[#E5807D]'
+                              : 'text-[#2A6B3D] dark:text-[#86A98F]'
+                          }`}
+                        >
+                          {item.marginalProfitPerKgGain > 0 ? '+' : ''}${item.marginalProfitPerKgGain.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`text-[10px] py-0.5 px-2 font-semibold uppercase rounded-[3px] inline-block ${
+                              item.isPastOptimalPoint
+                                ? 'status-badge-red'
+                                : item.harvestStatus === 'OPTIMAL_HARVEST'
+                                ? 'status-badge-amber'
+                                : item.harvestStatus === 'APPROACHING_HARVEST'
+                                ? 'status-badge-amber'
+                                : 'status-badge-green'
+                            }`}
+                          >
+                            {item.isPastOptimalPoint
+                              ? '¡Cosechar Ya!'
+                              : item.harvestStatus === 'OPTIMAL_HARVEST'
+                              ? 'Talla Óptima'
+                              : item.harvestStatus === 'APPROACHING_HARVEST'
+                              ? 'Acabado'
+                              : 'En Engorde'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[#666159] dark:text-[#9E9689] max-w-xs truncate">
+                          {item.recommendationTitle} ({item.recommendedHarvestDate})
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

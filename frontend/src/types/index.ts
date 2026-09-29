@@ -141,3 +141,28 @@ export interface CostRecord {
   totalAmount: number;
   createdAt: string;
 }
+
+export interface HarvestOptimization {
+  batchId: string;
+  batchCode: string;
+  speciesName: string;
+  currentAvgWeightG: number;
+  targetCommercialWeightG: number;
+  currentBiomassKg: number;
+  activePopulation: number;
+  daysInProduction: number;
+  accumulatedFcr: number;
+  marginalFcr: number;
+  averageFeedCostPerKg: number;
+  marginalCostPerKgGain: number;
+  marketPricePerKg: number;
+  marginalProfitPerKgGain: number;
+  dailyBiomassGainKg: number;
+  projectedDailyProfitOrLoss: number;
+  harvestStatus: 'OPTIMAL_HARVEST' | 'APPROACHING_HARVEST' | 'GROWTH_PHASE';
+  recommendationTitle: string;
+  recommendationMessage: string;
+  recommendedHarvestDate: string;
+  isPastOptimalPoint: boolean;
+}
+
