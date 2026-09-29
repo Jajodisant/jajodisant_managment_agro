@@ -19,6 +19,8 @@ public record CreateBatchRequest(
 
     UUID pondId,
 
+    UUID penId,
+
     @NotNull(message = "La especie es obligatoria")
     UUID speciesId,
 
@@ -46,4 +48,20 @@ public record CreateBatchRequest(
      * Bandera para forzar la siembra consciente aún existiendo alerta preventiva de sobrecupo (HU-02).
      */
     boolean forceStocking
-) {}
+) {
+    public CreateBatchRequest(
+        UUID farmId,
+        UUID pondId,
+        UUID speciesId,
+        String batchCode,
+        LocalDate stockingDate,
+        Integer initialQuantity,
+        BigDecimal initialAvgWeightG,
+        BigDecimal targetHarvestWeightG,
+        LocalDate estimatedHarvestDate,
+        boolean forceStocking
+    ) {
+        this(farmId, pondId, null, speciesId, batchCode, stockingDate, initialQuantity, initialAvgWeightG,
+             targetHarvestWeightG, estimatedHarvestDate, forceStocking);
+    }
+}

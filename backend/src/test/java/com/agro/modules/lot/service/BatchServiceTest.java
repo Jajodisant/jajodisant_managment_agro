@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import com.agro.common.exception.BusinessRuleException;
 import com.agro.modules.farm.domain.Farm;
 import com.agro.modules.farm.domain.Pond;
@@ -28,6 +30,9 @@ import com.agro.modules.lot.dto.CreateBatchRequest;
 import com.agro.modules.lot.repository.BatchRepository;
 import com.agro.modules.species.domain.Species;
 import com.agro.modules.species.service.SpeciesService;
+import com.agro.modules.swine.domain.SwineBarn;
+import com.agro.modules.swine.domain.SwinePen;
+import com.agro.modules.swine.repository.SwinePenRepository;
 
 @ExtendWith(MockitoExtension.class)
 class BatchServiceTest {
@@ -40,6 +45,9 @@ class BatchServiceTest {
 
     @Mock
     private PondService pondService;
+
+    @Mock
+    private SwinePenRepository swinePenRepository;
 
     @Mock
     private SpeciesService speciesService;
@@ -153,5 +161,75 @@ class BatchServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.overcrowdingWarning()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Debe sembrar exitosamente un lote de cerdos en corral (HU-10/HU-11)")
+    void createBatch_SwinePen_Success() {
+        UUID penId = UUID.randomUUID();
+        SwineBarn barn = SwineBarn.builder().id(UUID.randomUUID()).codeName("Galpón Ceba 01").build();
+        SwinePen pen = SwinePen.builder()
+                .id(penId)
+                .barn(barn)
+                .penCode("C-01")
+                .phase("ceba")
+                .maxCapacityPigs(20)
+                .isActive(true)
+                .build();
+
+        CreateBatchRequest request = new CreateBatchRequest(
+                farmId, null, penId, speciesId, "CER-2026-001", LocalDate.now(),
+                18, new BigDecimal("25000.00"), new BigDecimal("110000.00"),
+                LocalDate.now().plusMonths(4), false
+        );
+
+        when(farmService.findFarmEntity(farmId, ownerId)).thenReturn(sampleFarm);
+        when(batchRepository.existsByBatchCodeIgnoreCase("CER-2026-001")).thenReturn(false);
+        when(speciesService.findSpeciesEntity(speciesId)).thenReturn(sampleSpecies);
+        when(swinePenRepository.findById(penId)).thenReturn(Optional.of(pen));
+
+        when(batchRepository.save(any(Batch.class))).thenAnswer(inv -> {
+            Batch b = inv.getArgument(0);
+            b.setId(UUID.randomUUID());
+            return b;
+        });
+
+        BatchResponse response = batchService.createBatch(request, ownerId);
+
+        assertThat(response).isNotNull();
+        assertThat(response.penId()).isEqualTo(penId);
+        assertThat(response.penCode()).isEqualTo("C-01");
+        assertThat(response.barnCodeName()).isEqualTo("Galpón Ceba 01");
+        assertThat(response.overcrowdingWarning()).isFalse();
+        verify(batchRepository).save(any(Batch.class));
+    }
+
+    @Test
+    @DisplayName("Debe arrojar BusinessRuleException si la cantidad de cerdos supera el aforo y forceStocking es false")
+    void createBatch_SwinePen_Overcrowding_ThrowsException() {
+        UUID penId = UUID.randomUUID();
+        SwinePen pen = SwinePen.builder()
+                .id(penId)
+                .penCode("C-01")
+                .phase("ceba")
+                .maxCapacityPigs(20)
+                .isActive(true)
+                .build();
+
+        // 25 cerdos > 20 capacidad
+        CreateBatchRequest request = new CreateBatchRequest(
+                farmId, null, penId, speciesId, "CER-2026-002", LocalDate.now(),
+                25, new BigDecimal("25000.00"), new BigDecimal("110000.00"),
+                LocalDate.now().plusMonths(4), false
+        );
+
+        when(farmService.findFarmEntity(farmId, ownerId)).thenReturn(sampleFarm);
+        when(batchRepository.existsByBatchCodeIgnoreCase("CER-2026-002")).thenReturn(false);
+        when(speciesService.findSpeciesEntity(speciesId)).thenReturn(sampleSpecies);
+        when(swinePenRepository.findById(penId)).thenReturn(Optional.of(pen));
+
+        assertThatThrownBy(() -> batchService.createBatch(request, ownerId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Alerta preventiva de sobrecupo porcino (HU-10/HU-11)");
     }
 }

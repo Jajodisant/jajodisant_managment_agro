@@ -366,7 +366,7 @@ export const FeedingPage: React.FC = () => {
               ) : (
                 batches.map((batch) => (
                   <option key={batch.id} value={batch.id} className="bg-[#FBF8F1] dark:bg-[#1F1C18] text-[#1F1D1A] dark:text-[#EDE6DA]">
-                    Lote {batch.batchCode} • {batch.speciesCommonName}
+                    Lote {batch.batchCode} • {batch.speciesCommonName} {batch.penCode ? `(Corral ${batch.penCode})` : batch.pondCodeName ? `(Estanque ${batch.pondCodeName})` : ''}
                   </option>
                 ))
               )}

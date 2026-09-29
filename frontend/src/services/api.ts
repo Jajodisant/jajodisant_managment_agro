@@ -74,6 +74,7 @@ export const api = {
   createBatch: (data: {
     farmId: string;
     pondId?: string;
+    penId?: string;
     speciesId: string;
     batchCode: string;
     stockingDate: string;
