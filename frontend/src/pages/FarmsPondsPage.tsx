@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Plus, Droplet, Wind, CheckCircle2 } from 'lucide-react';
+import { Layers, Plus, Droplet, Wind, CheckCircle2, ChevronRight, Ruler } from 'lucide-react';
 import { api } from '../services/api';
 import { Farm, Pond } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 
 export const FarmsPondsPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarmId, setSelectedFarmId] = useState<string>('');
   const [ponds, setPonds] = useState<Pond[]>([]);
@@ -29,6 +29,17 @@ export const FarmsPondsPage: React.FC = () => {
 
   useEffect(() => {
     loadFarms();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowFarmModal(false);
+        setShowPondModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -73,7 +84,7 @@ export const FarmsPondsPage: React.FC = () => {
       setFarmName('');
       setFarmLocation('');
       setShowFarmModal(false);
-      showFeedback('¡Granja registrada exitosamente!');
+      showFeedback(language === 'es' ? '¡Granja registrada exitosamente en el cuaderno!' : 'Farm successfully registered in journal!');
     } catch (err: any) {
       alert(err.message || 'Error registrando granja');
     }
@@ -102,7 +113,11 @@ export const FarmsPondsPage: React.FC = () => {
       setPondCode('');
       setCustomDensity('');
       setShowPondModal(false);
-      showFeedback(`¡Estanque ${created.codeName} creado! Volumen: ${created.volumeM3} m³, Aforo: ${created.maxBiomassCapacityKg} kg`);
+      showFeedback(
+        language === 'es'
+          ? `¡Estanque ${created.codeName} aforado! Volumen: ${created.volumeM3} m³, Aforo: ${created.maxBiomassCapacityKg} kg`
+          : `Pond ${created.codeName} gauged! Volume: ${created.volumeM3} m³, Capacity: ${created.maxBiomassCapacityKg} kg`
+      );
     } catch (err: any) {
       alert(err.message || 'Error registrando estanque');
     }
@@ -119,170 +134,239 @@ export const FarmsPondsPage: React.FC = () => {
   const previewCapacity = (Number(previewVolume) * previewDensity).toFixed(2);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Toast Feedback */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Toast Feedback sobrio estilo cuaderno */}
       {feedbackMsg && (
-        <div className="bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2 animate-bounce">
-          <CheckCircle2 className="w-5 h-5" />
+        <div className="card-paper bg-[#EDF3EE] dark:bg-[#18231C] border-[#2E4A36] text-[#2E4A36] dark:text-[#86A98F] px-4 py-3 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
           <span className="font-semibold text-sm">{feedbackMsg}</span>
         </div>
       )}
 
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Cabecera Estilo Cuaderno */}
+      <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-4 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <Layers className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="notebook-stamp">
+              FOLIO #01 • INSTALACIONES
+            </span>
+            <span className="text-xs text-[#666159] dark:text-[#9E9689] uppercase tracking-wider font-mono">
+              NORMA HU-01
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-serif text-[#1F1D1A] dark:text-[#EDE6DA] font-semibold tracking-tight">
             {t('farms_title')}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[#666159] dark:text-[#9E9689] mt-0.5 max-w-2xl">
             {t('farms_subtitle')}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => setShowFarmModal(true)}
-            className="btn-field bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-900 dark:hover:bg-slate-600"
+            className="btn-secondary text-xs sm:text-sm px-4 h-11"
           >
             <Plus className="w-4 h-4" />
-            Nueva Granja
+            <span>{language === 'es' ? 'Nueva Granja' : 'New Farm'}</span>
           </button>
           <button
             onClick={() => setShowPondModal(true)}
             disabled={!selectedFarmId}
-            className="btn-field bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="btn-primary text-xs sm:text-sm px-4 h-11 disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            {t('btn_new_pond')}
+            <span>{t('btn_new_pond')}</span>
           </button>
         </div>
       </div>
 
-      {/* Selector de Granja */}
+      {/* Selector de Granja / Carpeta de Cuaderno */}
       {farms.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4 transition-colors">
-          <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <div className="flex-1">
-            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Granja Seleccionada
-            </label>
-            <select
-              value={selectedFarmId}
-              onChange={(e) => setSelectedFarmId(e.target.value)}
-              className="mt-0.5 font-bold text-slate-900 dark:text-white bg-transparent border-0 focus:ring-0 cursor-pointer p-0 text-base sm:text-lg w-full"
-            >
-              {farms.map((f) => (
-                <option key={f.id} value={f.id} className="dark:bg-slate-900 text-slate-900 dark:text-white">
-                  {f.name} {f.location ? `(${f.location})` : ''} - {f.pondsCount} estanques
-                </option>
-              ))}
-            </select>
+        <div className="card-paper p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[4px] bg-[#2E4A36]/10 text-[#2E4A36] dark:text-[#86A98F] border border-[#2E4A36]/20 flex items-center justify-center shrink-0">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#666159] dark:text-[#9E9689] block">
+                {language === 'es' ? 'Granja de Operación Activa' : 'Active Production Farm'}
+              </span>
+              <select
+                value={selectedFarmId}
+                onChange={(e) => setSelectedFarmId(e.target.value)}
+                className="font-serif font-semibold text-base sm:text-lg text-[#1F1D1A] dark:text-[#EDE6DA] bg-transparent border-0 focus:ring-0 cursor-pointer p-0 w-full"
+              >
+                {farms.map((f) => (
+                  <option key={f.id} value={f.id} className="bg-[#FBF8F1] dark:bg-[#1F1C18] text-[#1F1D1A] dark:text-[#EDE6DA]">
+                    {f.name} {f.location ? `(${f.location})` : ''} • {f.pondsCount} estanques aforados
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-[#666159] dark:text-[#9E9689] font-mono">
+            <span>Granjas registradas: {farms.length}</span>
           </div>
         </div>
       )}
 
-      {/* Listado de Estanques con métricas de aforo (HU-01) */}
-      <div>
-        <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white mb-4">
-          Estanques Registrados ({ponds.length})
-        </h2>
+      {/* Listado de Estanques con Métricas de Aforo (HU-01) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
+          <h2 className="text-lg font-serif font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">
+            {language === 'es' ? 'Fichas de Estanques Aforados' : 'Gauged Pond Records'} ({ponds.length})
+          </h2>
+          <span className="text-xs text-[#666159] dark:text-[#9E9689] font-mono">
+            {language === 'es' ? 'Capacidad en m³ y biomasa' : 'm³ Volume & carrying capacity'}
+          </span>
+        </div>
 
         {ponds.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-3xl border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
-            <Droplet className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-700 mb-2" />
-            <p className="font-bold text-slate-700 dark:text-slate-200">No hay estanques en esta granja.</p>
-            <p className="text-xs text-slate-400 mt-1">Haz clic en "Nuevo Estanque" para registrar dimensiones y aforo.</p>
+          <div className="card-notebook p-8 text-center">
+            <Droplet className="w-10 h-10 text-[#666159] dark:text-[#9E9689] mx-auto mb-2 opacity-60" />
+            <h3 className="font-serif font-semibold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">
+              {language === 'es' ? 'No hay estanques registrados en esta granja.' : 'No ponds registered for this farm.'}
+            </h3>
+            <p className="text-xs text-[#666159] dark:text-[#9E9689] max-w-sm mx-auto mt-1 mb-4">
+              {language === 'es'
+                ? 'Registra las dimensiones físicas (largo × ancho × profundidad) para calcular el volumen útil y la capacidad máxima de siembra.'
+                : 'Log physical dimensions to calculate usable water volume and stocking limits.'}
+            </p>
+            <button
+              onClick={() => setShowPondModal(true)}
+              className="btn-primary text-xs h-10 px-4 inline-flex"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('btn_new_pond')}</span>
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {ponds.map((p) => (
               <div
                 key={p.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-4 hover:shadow-md transition-colors"
+                className="card-notebook-forest p-5 flex flex-col justify-between"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white">{p.codeName}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider mt-0.5">
-                      Tipo: {p.pondType}
-                    </p>
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="font-serif font-bold text-lg text-[#1F1D1A] dark:text-[#EDE6DA]">
+                        {p.codeName}
+                      </h3>
+                      <span className="text-xs text-[#666159] dark:text-[#9E9689] font-mono uppercase">
+                        {p.pondType === 'earthen' ? 'En Tierra (Rústico)' : p.pondType === 'geomembrane' ? 'Geomembrana' : 'Concreto'}
+                      </span>
+                    </div>
+
+                    {p.hasAeration ? (
+                      <span className="status-badge-green text-[10px] py-0.5">
+                        <Wind className="w-3 h-3" />
+                        <span>Aireado (10 kg/m³)</span>
+                      </span>
+                    ) : (
+                      <span className="notebook-stamp text-[10px] py-0.5">
+                        <span>Sin aireación (3 kg/m³)</span>
+                      </span>
+                    )}
                   </div>
-                  {p.hasAeration ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                      <Wind className="w-3.5 h-3.5" />
-                      Aireado
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                      Sin aireación
-                    </span>
-                  )}
+
+                  {/* Dimensiones y cubicaje */}
+                  <div className="p-3 bg-[#F4EFE3]/70 dark:bg-[#141210]/60 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F] text-xs space-y-1.5 my-3">
+                    <div className="flex items-center justify-between text-[#666159] dark:text-[#9E9689]">
+                      <span className="flex items-center gap-1">
+                        <Ruler className="w-3.5 h-3.5" />
+                        <span>Dimensiones:</span>
+                      </span>
+                      <span className="font-mono text-[#1F1D1A] dark:text-[#EDE6DA]">
+                        {p.lengthM}m × {p.widthM}m × {p.avgDepthM}m
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-[#DDD4C4] dark:border-[#38342F] pt-1">
+                      <span className="font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">Volumen Útil (m³):</span>
+                      <span className="font-serif font-bold text-base text-[#1F1D1A] dark:text-[#EDE6DA] metric-number">
+                        {p.volumeM3} m³
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Métricas HU-01 */}
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl">
-                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Volumen Útil</p>
-                    <p className="text-lg font-black text-slate-900 dark:text-white">{p.volumeM3} m³</p>
-                    <p className="text-[10px] text-slate-400">
-                      {p.lengthM}m × {p.widthM}m × {p.avgDepthM}m
-                    </p>
-                  </div>
-
-                  <div className="bg-emerald-50 dark:bg-emerald-950/50 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-900/60">
-                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Aforo Máximo</p>
-                    <p className="text-lg font-black text-emerald-800 dark:text-emerald-300">
+                {/* Aforo Máximo de Carga */}
+                <div className="pt-3 border-t border-[#E2D9CA] dark:border-[#332E27] flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-[#666159] dark:text-[#9E9689] block">
+                      Aforo Máximo de Biomasa
+                    </span>
+                    <span className="font-serif font-bold text-base text-[#2E4A36] dark:text-[#86A98F] metric-number">
                       {p.maxBiomassCapacityKg ? `${p.maxBiomassCapacityKg.toLocaleString()} kg` : 'N/A'}
-                    </p>
-                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                      Límite: {p.maxDensityKgM3} kg/m³
-                    </p>
+                    </span>
                   </div>
+                  <span className="text-xs font-mono text-[#666159] dark:text-[#9E9689]">
+                    Límite: {p.maxDensityKgM3} kg/m³
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Modal: Crear Granja */}
+      {/* Modal: Crear Granja (Estilo Ficha de Cuaderno) */}
       {showFarmModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-800 transition-colors">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Registrar Nueva Granja</h3>
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowFarmModal(false); }}
+          className="fixed inset-0 z-50 bg-[#1F1D1A]/50 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div className="card-paper max-w-md w-full p-6 space-y-4 shadow-xl border border-[#E2D9CA] dark:border-[#332E27] cursor-default">
+            <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
+              <span className="notebook-stamp text-[10px]">ACTA DE REGISTRO</span>
+              <h3 className="text-lg font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA] mt-1">
+                Registrar Nueva Granja
+              </h3>
+            </div>
+
             <form onSubmit={handleCreateFarm} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Nombre Comercial *</label>
+                <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                  Nombre Comercial de la Granja *
+                </label>
                 <input
                   type="text"
                   required
                   value={farmName}
                   onChange={(e) => setFarmName(e.target.value)}
                   placeholder="ej. Piscícola San Jerónimo"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:text-white"
+                  className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] focus:border-[#2E4A36] outline-none text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                 />
               </div>
+
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Ubicación / Vereda</label>
+                <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                  Ubicación Geográfica / Vereda
+                </label>
                 <input
                   type="text"
                   value={farmLocation}
                   onChange={(e) => setFarmLocation(e.target.value)}
                   placeholder="ej. Vereda El Salado, Huila"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:text-white"
+                  className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] focus:border-[#2E4A36] outline-none text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#E2D9CA] dark:border-[#332E27]">
                 <button
                   type="button"
                   onClick={() => setShowFarmModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  className="btn-secondary text-xs h-10 px-4"
                 >
                   {t('btn_cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700"
+                  className="btn-primary text-xs h-10 px-4"
                 >
                   Guardar Granja
                 </button>
@@ -292,40 +376,55 @@ export const FarmsPondsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Crear Estanque con Aforo en tiempo real (HU-01) */}
+      {/* Modal: Crear Estanque con Aforo Técnico (HU-01) */}
       {showPondModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto transition-colors">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Nuevo Estanque con Aforo Técnico (HU-01)</h3>
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowPondModal(false); }}
+          className="fixed inset-0 z-50 bg-[#1F1D1A]/50 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div className="card-paper max-w-lg w-full p-6 space-y-4 shadow-xl border border-[#E2D9CA] dark:border-[#332E27] max-h-[90vh] overflow-y-auto cursor-default">
+            <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
+              <span className="notebook-stamp text-[10px]">FICHA TÉCNICA HU-01</span>
+              <h3 className="text-lg font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA] mt-1">
+                Aforo Técnico de Estanque
+              </h3>
+            </div>
+
             <form onSubmit={handleCreatePond} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Código o Nombre del Estanque *</label>
+                <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                  Código o Nombre del Estanque *
+                </label>
                 <input
                   type="text"
                   required
                   value={pondCode}
                   onChange={(e) => setPondCode(e.target.value)}
                   placeholder="ej. Estanque T-01"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:text-white"
+                  className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] focus:border-[#2E4A36] outline-none text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Tipo de Estanque</label>
+                <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                  Tipo de Construcción
+                </label>
                 <select
                   value={pondType}
                   onChange={(e) => setPondType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:text-white"
+                  className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] focus:border-[#2E4A36] outline-none text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                 >
-                  <option value="earthen">En Tierra (Rústico)</option>
-                  <option value="geomembrane">Geomembrana / Circular</option>
+                  <option value="earthen">En Tierra (Rústico tradicional)</option>
+                  <option value="geomembrane">Geomembrana / Circular intensivo</option>
                   <option value="concrete">Concreto / Cemento</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Largo (m) *</label>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">Largo (m) *</label>
                   <input
                     type="number"
                     step="0.1"
@@ -333,11 +432,11 @@ export const FarmsPondsPage: React.FC = () => {
                     required
                     value={lengthM}
                     onChange={(e) => setLengthM(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm dark:text-white"
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Ancho (m) *</label>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">Ancho (m) *</label>
                   <input
                     type="number"
                     step="0.1"
@@ -345,11 +444,11 @@ export const FarmsPondsPage: React.FC = () => {
                     required
                     value={widthM}
                     onChange={(e) => setWidthM(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm dark:text-white"
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Profundidad (m) *</label>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">Profundidad (m) *</label>
                   <input
                     type="number"
                     step="0.1"
@@ -357,56 +456,54 @@ export const FarmsPondsPage: React.FC = () => {
                     required
                     value={depthM}
                     onChange={(e) => setDepthM(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm dark:text-white"
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+              <div className="flex items-center gap-3 p-3 bg-[#F4EFE3]/80 dark:bg-[#141210]/60 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
                 <input
                   type="checkbox"
                   id="aeration"
                   checked={hasAeration}
                   onChange={(e) => setHasAeration(e.target.checked)}
-                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                  className="w-4 h-4 text-[#2E4A36] rounded"
                 />
-                <label htmlFor="aeration" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                  Cuenta con Aireación Mecánica Forzada (Blowers, Splashers)
+                <label htmlFor="aeration" className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] cursor-pointer">
+                  Cuenta con Aireación Mecánica Forzada (Splashers / Blowers)
                 </label>
               </div>
 
               {/* Caja de Cálculo Dinámico en Vivo */}
-              <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 space-y-1">
-                <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                  Cálculo Zootécnico Automático (HU-01)
-                </p>
-                <div className="grid grid-cols-2 gap-2 pt-1 text-sm">
+              <div className="bg-[#EDF3EE] dark:bg-[#18231C] border border-[#2E4A36]/30 rounded-[4px] p-4 space-y-2">
+                <span className="notebook-stamp text-[10px]">CÁLCULO ZOOTÉCNICO HU-01</span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-slate-600 dark:text-slate-400 text-xs">Volumen Estimado:</span>
-                    <p className="font-extrabold text-slate-900 dark:text-white">{previewVolume} m³</p>
+                    <span className="text-[#666159] dark:text-[#9E9689] block">Volumen Calculado:</span>
+                    <span className="font-serif font-bold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">{previewVolume} m³</span>
                   </div>
                   <div>
-                    <span className="text-slate-600 dark:text-slate-400 text-xs">Densidad Límite:</span>
-                    <p className="font-extrabold text-slate-900 dark:text-white">{previewDensity} kg/m³</p>
+                    <span className="text-[#666159] dark:text-[#9E9689] block">Densidad de Carga:</span>
+                    <span className="font-serif font-bold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">{previewDensity} kg/m³</span>
                   </div>
                 </div>
-                <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800 text-xs flex justify-between items-center">
-                  <span className="font-semibold text-emerald-900 dark:text-emerald-200">Capacidad Máxima de Biomasa:</span>
-                  <span className="text-base font-black text-emerald-800 dark:text-emerald-300">{previewCapacity} kg</span>
+                <div className="pt-2 border-t border-[#2E4A36]/20 flex justify-between items-center text-xs">
+                  <span className="font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">Capacidad Máxima Segura:</span>
+                  <span className="font-serif font-bold text-base text-[#2E4A36] dark:text-[#86A98F]">{previewCapacity} kg</span>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#E2D9CA] dark:border-[#332E27]">
                 <button
                   type="button"
                   onClick={() => setShowPondModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  className="btn-secondary text-xs h-10 px-4"
                 >
                   {t('btn_cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700"
+                  className="btn-primary text-xs h-10 px-4"
                 >
                   Guardar Estanque
                 </button>

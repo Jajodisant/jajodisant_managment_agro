@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Activity,
   Plus,
-  RefreshCw,
   AlertTriangle,
   CheckCircle2,
   AlertOctagon,
@@ -11,14 +10,15 @@ import {
   Skull,
   Calendar,
   Layers,
-  Info
+  Info,
+  Camera
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Farm, Batch, Biometry } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 
 export const BiometriesPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarmId, setSelectedFarmId] = useState<string>('');
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -41,6 +41,16 @@ export const BiometriesPage: React.FC = () => {
 
   useEffect(() => {
     loadFarms();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -101,14 +111,9 @@ export const BiometriesPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateBiometry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatchId) return;
-
-    if (sampledCount <= 0 || totalSampleWeightG <= 0) {
-      setErrorMessage('La cantidad muestreada y el peso total deben ser mayores a cero.');
-      return;
-    }
 
     try {
       setSubmitting(true);
@@ -116,18 +121,23 @@ export const BiometriesPage: React.FC = () => {
 
       await api.recordBiometry(selectedBatchId, {
         samplingDate,
-        sampledCount,
-        totalSampleWeightG,
-        observedMortality,
+        sampledCount: Number(sampledCount),
+        totalSampleWeightG: Number(totalSampleWeightG),
+        observedMortality: Number(observedMortality),
         observations: observations.trim() || undefined
       });
 
-      setSuccessMessage('Biometría registrada exitosamente. FCR y GMD calculados en tiempo real.');
+      setSuccessMessage(
+        language === 'es'
+          ? '¡Muestreo biométrico asentado exitosamente en el cuaderno de bitácora!'
+          : 'Biometric sampling recorded successfully in journal!'
+      );
       setIsModalOpen(false);
       resetForm();
       await loadBiometries(selectedBatchId);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Error al guardar la biometría');
+      setErrorMessage(err.message || 'Error al asentar el muestreo');
     } finally {
       setSubmitting(false);
     }
@@ -141,82 +151,95 @@ export const BiometriesPage: React.FC = () => {
     setObservations('');
   };
 
-  const selectedBatch = batches.find(b => b.id === selectedBatchId);
+  const selectedBatch = batches.find((b) => b.id === selectedBatchId);
   const latestBiometry = biometries.length > 0 ? biometries[0] : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Mensajes de Feedback */}
+      {successMessage && (
+        <div className="card-paper bg-[#EDF3EE] dark:bg-[#18231C] border-[#2E4A36] text-[#2E4A36] dark:text-[#86A98F] px-4 py-3 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
+          <span className="font-semibold text-sm">{successMessage}</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="card-paper bg-[#A32A26]/10 border-[#A32A26]/30 text-[#A32A26] dark:text-[#E5807D] px-4 py-3 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span className="font-semibold text-sm">{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Cabecera Estilo Cuaderno */}
+      <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-4 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <Activity className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="notebook-stamp">
+              FOLIO #05 • CONTROL BIOMÉTRICO
+            </span>
+            <span className="text-xs text-[#666159] dark:text-[#9E9689] uppercase tracking-wider font-mono">
+              NORMA HU-05
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-serif text-[#1F1D1A] dark:text-[#EDE6DA] font-semibold tracking-tight">
             {t('biometries_title')}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-sm text-[#666159] dark:text-[#9E9689] mt-0.5 max-w-2xl">
             {t('biometries_subtitle')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => selectedBatchId && loadBiometries(selectedBatchId)}
-            className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm"
-            title="Recargar biometrías"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            disabled={!selectedBatchId}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl shadow-sm transition disabled:opacity-50"
-          >
-            <Plus className="w-4 h-4" />
-            {t('btn_new_sampling')}
-          </button>
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          disabled={!selectedBatchId}
+          className="btn-primary text-xs sm:text-sm px-4 h-11 disabled:opacity-50"
+        >
+          <Plus className="w-4 h-4" />
+          <span>{t('btn_new_sampling')}</span>
+        </button>
       </div>
 
-      {/* Selectores de Granja y Lote */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 transition-colors">
-          <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+      {/* Selector de Carpeta de Campo: Granja y Lote */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="card-paper p-4 flex items-center gap-3">
+          <Layers className="w-5 h-5 text-[#2E4A36] dark:text-[#86A98F] shrink-0" />
           <div className="flex-1">
-            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-              Seleccionar Granja
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-[#666159] dark:text-[#9E9689] block mb-1">
+              {language === 'es' ? 'Granja de Producción' : 'Production Farm'}
             </label>
             <select
               value={selectedFarmId}
               onChange={(e) => setSelectedFarmId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-transparent font-serif font-semibold text-sm sm:text-base text-[#1F1D1A] dark:text-[#EDE6DA] border-0 focus:ring-0 cursor-pointer p-0"
             >
-              {farms.map((farm) => (
-                <option key={farm.id} value={farm.id} className="dark:bg-slate-900">
-                  {farm.name} ({farm.pondsCount} estanques)
+              {farms.map((f) => (
+                <option key={f.id} value={f.id} className="bg-[#FBF8F1] dark:bg-[#1F1C18] text-[#1F1D1A] dark:text-[#EDE6DA]">
+                  {f.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 transition-colors">
-          <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <div className="card-paper p-4 flex items-center gap-3">
+          <Activity className="w-5 h-5 text-[#2E4A36] dark:text-[#86A98F] shrink-0" />
           <div className="flex-1">
-            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-              Lote a Evaluar
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-[#666159] dark:text-[#9E9689] block mb-1">
+              {language === 'es' ? 'Lote en Seguimiento' : 'Monitored Batch'}
             </label>
             <select
               value={selectedBatchId}
               onChange={(e) => setSelectedBatchId(e.target.value)}
               disabled={batches.length === 0}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+              className="w-full bg-transparent font-serif font-semibold text-sm sm:text-base text-[#1F1D1A] dark:text-[#EDE6DA] border-0 focus:ring-0 cursor-pointer p-0 disabled:opacity-50"
             >
               {batches.length === 0 ? (
-                <option value="">No hay lotes en esta granja</option>
+                <option value="">{language === 'es' ? 'No hay lotes en esta granja' : 'No batches in this farm'}</option>
               ) : (
                 batches.map((batch) => (
-                  <option key={batch.id} value={batch.id} className="dark:bg-slate-900">
-                    Lote {batch.batchCode} - {batch.speciesCommonName} ({batch.status})
+                  <option key={batch.id} value={batch.id} className="bg-[#FBF8F1] dark:bg-[#1F1C18] text-[#1F1D1A] dark:text-[#EDE6DA]">
+                    Lote {batch.batchCode} • {batch.speciesCommonName} ({batch.status})
                   </option>
                 ))
               )}
@@ -225,187 +248,134 @@ export const BiometriesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Mensajes de Alerta */}
-      {errorMessage && (
-        <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 flex items-start gap-3 text-red-700 dark:text-red-300 text-sm">
-          <AlertTriangle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
-          <div>{errorMessage}</div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3 text-emerald-800 dark:text-emerald-300 text-sm">
-          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
-          <div>{successMessage}</div>
-        </div>
-      )}
-
-      {/* Tarjetas KPI de Estado Biológico Actual */}
+      {/* Tarjetas KPI de Estado Biológico Actual (Estilo Cuaderno) */}
       {selectedBatch && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Peso Promedio</span>
-              <Scale className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Peso Promedio */}
+          <div className="card-paper p-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-[#666159] dark:text-[#9E9689] mb-1">
+              <span className="text-[11px] uppercase tracking-wider font-semibold">Peso Promedio</span>
+              <Scale className="w-4 h-4 text-[#2E4A36] dark:text-[#86A98F]" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white">
+            <div className="font-serif font-bold text-2xl text-[#1F1D1A] dark:text-[#EDE6DA] metric-number mt-1">
               {latestBiometry ? `${latestBiometry.calculatedAvgWeightG.toFixed(1)} g` : `${selectedBatch.initialAvgWeightG.toFixed(1)} g`}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-[#666159] dark:text-[#9E9689] mt-1 font-mono">
               Inicial: {selectedBatch.initialAvgWeightG.toFixed(1)} g
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">GMD (Ganancia Diaria)</span>
-              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          {/* GMD */}
+          <div className="card-paper p-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-[#666159] dark:text-[#9E9689] mb-1">
+              <span className="text-[11px] uppercase tracking-wider font-semibold">GMD (Ganancia Diaria)</span>
+              <TrendingUp className="w-4 h-4 text-[#3B5568] dark:text-[#8EA8BA]" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white">
+            <div className="font-serif font-bold text-2xl text-[#1F1D1A] dark:text-[#EDE6DA] metric-number mt-1">
               {latestBiometry?.dailyWeightGainG ? `${latestBiometry.dailyWeightGainG.toFixed(2)} g/d` : '0.00 g/d'}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Crecimiento promedio</p>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Biomasa Actual</span>
-              <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white">
-              {latestBiometry ? `${latestBiometry.estimatedBiomassKg.toFixed(1)} kg` : `${selectedBatch.initialBiomassKg.toFixed(1)} kg`}
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Población: {latestBiometry?.remainingPopulation ?? selectedBatch.initialQuantity} peces
+            <p className="text-[11px] text-[#666159] dark:text-[#9E9689] mt-1">
+              Crecimiento promedio
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">FCR Acumulado</span>
-              {latestBiometry?.fcrStatus === 'GREEN' && <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-              {latestBiometry?.fcrStatus === 'AMBER' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
-              {latestBiometry?.fcrStatus === 'RED' && <AlertOctagon className="w-4 h-4 text-red-600 dark:text-red-400" />}
-              {!latestBiometry && <Info className="w-4 h-4 text-slate-400" />}
+          {/* Biomasa Estimada */}
+          <div className="card-paper p-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-[#666159] dark:text-[#9E9689] mb-1">
+              <span className="text-[11px] uppercase tracking-wider font-semibold">Biomasa Estimada</span>
+              <Activity className="w-4 h-4 text-[#2E4A36] dark:text-[#86A98F]" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white">
-              {latestBiometry?.accumulatedFcr ? latestBiometry.accumulatedFcr.toFixed(2) : 'N/D'}
+            <div className="font-serif font-bold text-2xl text-[#2E4A36] dark:text-[#86A98F] metric-number mt-1">
+              {latestBiometry ? `${latestBiometry.estimatedBiomassKg.toFixed(1)} kg` : `${selectedBatch.initialBiomassKg.toFixed(1)} kg`}
             </div>
-            <div className="mt-1">
-              {latestBiometry?.fcrStatus === 'GREEN' && (
-                <span className="inline-block px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">
-                  {t('fcr_excellent')}
-                </span>
-              )}
-              {latestBiometry?.fcrStatus === 'AMBER' && (
-                <span className="inline-block px-2 py-0.5 rounded text-xs font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
-                  {t('fcr_amber')}
-                </span>
-              )}
-              {latestBiometry?.fcrStatus === 'RED' && (
-                <span className="inline-block px-2 py-0.5 rounded text-xs font-bold bg-red-100 dark:bg-red-950/70 text-red-800 dark:text-red-300">
-                  {t('fcr_critical')}
-                </span>
-              )}
-              {!latestBiometry && (
-                <span className="text-xs text-slate-400">Sin datos de FCR</span>
-              )}
-            </div>
+            <p className="text-[11px] text-[#666159] dark:text-[#9E9689] mt-1 font-mono">
+              Población: {latestBiometry?.remainingPopulation ?? selectedBatch.initialQuantity} inds
+            </p>
           </div>
-        </div>
+
+          {/* FCR Semáforo */}
+          <div className="card-paper p-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-[#666159] dark:text-[#9E9689] mb-1">
+              <span className="text-[11px] uppercase tracking-wider font-semibold">FCR Acumulado</span>
+              {latestBiometry?.fcrStatus === 'GREEN' && <span className="status-badge-green text-[10px] py-0 px-1.5">Óptimo</span>}
+              {latestBiometry?.fcrStatus === 'AMBER' && <span className="status-badge-amber text-[10px] py-0 px-1.5">Alerta</span>}
+              {latestBiometry?.fcrStatus === 'RED' && <span className="status-badge-red text-[10px] py-0 px-1.5">Crítico</span>}
+              {!latestBiometry && <span className="notebook-stamp text-[10px] py-0 px-1.5">Sin datos</span>}
+            </div>
+            <div className="font-serif font-bold text-2xl text-[#1F1D1A] dark:text-[#EDE6DA] metric-number mt-1">
+              {latestBiometry?.accumulatedFcr ? latestBiometry.accumulatedFcr.toFixed(2) : '—'}
+            </div>
+            <p className="text-[11px] text-[#666159] dark:text-[#9E9689] mt-1">
+              kg alimento / kg peso vivo
+            </p>
+          </div>
+        </section>
       )}
 
-      {/* Historial de Muestreos */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Historial de Muestreos y Evolución</h2>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{biometries.length} registros</span>
+      {/* Historial de Muestreos en Formato Libro / Bitácora */}
+      <section className="card-paper p-0 overflow-hidden">
+        <div className="p-4 border-b border-[#E2D9CA] dark:border-[#332E27] flex items-center justify-between bg-[#F8F4EB] dark:bg-[#181613]">
+          <h2 className="font-serif font-semibold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">
+            {language === 'es' ? 'Historial de Muestreos y Evolución Biológica' : 'Sampling History & Biological Growth'}
+          </h2>
+          <span className="text-xs font-mono text-[#666159] dark:text-[#9E9689]">
+            {biometries.length} {language === 'es' ? 'actas asentadas' : 'records logged'}
+          </span>
         </div>
 
         {biometries.length === 0 ? (
-          <div className="p-12 text-center">
-            <Scale className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-            <h3 className="text-slate-800 dark:text-slate-200 font-bold text-base mb-1">Sin biometrías registradas</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm mx-auto mb-4">
-              Realiza el primer muestreo biométrico del lote para comenzar el seguimiento de FCR y tasa de crecimiento.
+          <div className="p-8 text-center">
+            <Scale className="w-10 h-10 text-[#666159] dark:text-[#9E9689] mx-auto mb-2 opacity-60" />
+            <h3 className="font-serif font-semibold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">
+              {language === 'es' ? 'Sin biometrías registradas para este lote.' : 'No biometries logged for this batch.'}
+            </h3>
+            <p className="text-xs text-[#666159] dark:text-[#9E9689] max-w-sm mx-auto mt-1 mb-4">
+              {language === 'es'
+                ? 'Realiza el primer pesaje de muestra para comenzar el cómputo automático del FCR y la tasa de ganancia diaria.'
+                : 'Perform first sample weighing to start automated FCR calculation and daily gain rate.'}
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
               disabled={!selectedBatchId}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2 rounded-2xl shadow-sm transition disabled:opacity-50"
+              className="btn-primary text-xs h-10 px-4 inline-flex disabled:opacity-50"
             >
-              Registrar Primer Muestreo
+              <Plus className="w-4 h-4" />
+              <span>{t('btn_new_sampling')}</span>
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 text-xs uppercase font-bold border-b border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs sm:text-sm text-[#1F1D1A] dark:text-[#EDE6DA]">
+              <thead className="border-b border-[#E2D9CA] dark:border-[#332E27] text-[11px] uppercase tracking-wider font-semibold text-[#666159] dark:text-[#9E9689] bg-[#F4EFE3]/50 dark:bg-[#141210]/50 font-serif">
                 <tr>
                   <th className="px-4 py-3">Fecha</th>
                   <th className="px-4 py-3">Muestra</th>
                   <th className="px-4 py-3">Peso Promedio</th>
                   <th className="px-4 py-3">GMD</th>
                   <th className="px-4 py-3">Población Activa</th>
-                  <th className="px-4 py-3">Biomasa Total</th>
-                  <th className="px-4 py-3">Ganancia Neta</th>
-                  <th className="px-4 py-3">Alimento Acum.</th>
-                  <th className="px-4 py-3">FCR Acumulado</th>
-                  <th className="px-4 py-3">Estado FCR</th>
+                  <th className="px-4 py-3">Biomasa Estimada</th>
+                  <th className="px-4 py-3">FCR</th>
+                  <th className="px-4 py-3">Semáforo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {biometries.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                    <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      {b.samplingDate}
+              <tbody className="divide-y divide-[#E2D9CA] dark:divide-[#332E27]">
+                {biometries.map((bio) => (
+                  <tr key={bio.id} className="hover:bg-[#F4EFE3]/50 dark:hover:bg-[#181613] transition">
+                    <td className="px-4 py-3 font-mono text-xs">{bio.samplingDate}</td>
+                    <td className="px-4 py-3 font-mono">{bio.sampledCount} inds ({bio.totalSampleWeightG} g)</td>
+                    <td className="px-4 py-3 font-bold metric-number">{bio.calculatedAvgWeightG.toFixed(1)} g</td>
+                    <td className="px-4 py-3 font-mono">{bio.dailyWeightGainG ? `${bio.dailyWeightGainG.toFixed(2)} g/d` : '—'}</td>
+                    <td className="px-4 py-3 font-mono">{bio.remainingPopulation?.toLocaleString() ?? '—'}</td>
+                    <td className="px-4 py-3 font-bold text-[#2E4A36] dark:text-[#86A98F] metric-number">
+                      {bio.estimatedBiomassKg.toFixed(1)} kg
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {b.sampledCount} peces ({b.totalSampleWeightG} g)
+                    <td className="px-4 py-3 font-mono font-bold">
+                      {bio.accumulatedFcr ? bio.accumulatedFcr.toFixed(2) : '—'}
                     </td>
-                    <td className="px-4 py-3.5 font-extrabold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
-                      {b.calculatedAvgWeightG.toFixed(1)} g
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {b.dailyWeightGainG ? `${b.dailyWeightGainG.toFixed(2)} g/d` : '-'}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {b.remainingPopulation ?? '-'}
-                      {b.observedMortality > 0 && (
-                        <span className="ml-1 text-xs text-red-500">(-{b.observedMortality})</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {b.estimatedBiomassKg.toFixed(1)} kg
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {b.netBiomassGainedKg ? `+${b.netBiomassGainedKg.toFixed(1)} kg` : '-'}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {b.accumulatedFeedKg ? `${b.accumulatedFeedKg.toFixed(1)} kg` : '-'}
-                    </td>
-                    <td className="px-4 py-3.5 font-black text-slate-900 dark:text-white whitespace-nowrap">
-                      {b.accumulatedFcr ? b.accumulatedFcr.toFixed(2) : '-'}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {b.fcrStatus === 'GREEN' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Excelente
-                        </span>
-                      )}
-                      {b.fcrStatus === 'AMBER' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
-                          <AlertTriangle className="w-3 h-3 text-amber-600" />
-                          Alerta
-                        </span>
-                      )}
-                      {b.fcrStatus === 'RED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-950/70 text-red-800 dark:text-red-300">
-                          <AlertOctagon className="w-3 h-3 text-red-600" />
-                          Crítico
-                        </span>
-                      )}
+                    <td className="px-4 py-3">
+                      {bio.fcrStatus === 'GREEN' && <span className="status-badge-green text-[10px] py-0.5">Óptimo</span>}
+                      {bio.fcrStatus === 'AMBER' && <span className="status-badge-amber text-[10px] py-0.5">Alerta</span>}
+                      {bio.fcrStatus === 'RED' && <span className="status-badge-red text-[10px] py-0.5">Crítico</span>}
                     </td>
                   </tr>
                 ))}
@@ -413,137 +383,122 @@ export const BiometriesPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Modal de Registro de Biometría */}
+      {/* Modal: Acta de Muestreo Biométrico (HU-05) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 overflow-y-auto max-h-[90vh] transition-colors">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Registrar Muestreo Biométrico</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Cálculo de peso promedio y factor de conversión</p>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-xl font-bold p-1"
-              >
-                &times;
-              </button>
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+          className="fixed inset-0 z-50 bg-[#1F1D1A]/50 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div className="card-paper max-w-lg w-full p-6 space-y-4 shadow-xl border border-[#E2D9CA] dark:border-[#332E27] max-h-[90vh] overflow-y-auto cursor-default">
+            <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
+              <span className="notebook-stamp text-[10px]">ACTA DE PESAJES HU-05</span>
+              <h3 className="text-lg font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA] mt-1">
+                Asentar Muestreo Biométrico
+              </h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Fecha de Muestreo
-                </label>
-                <div className="relative">
-                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <form onSubmit={handleCreateBiometry} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Fecha del Muestreo *
+                  </label>
                   <input
                     type="date"
                     required
                     value={samplingDate}
                     onChange={(e) => setSamplingDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Peces Muestreados
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Ejemplares en Muestra (n) *
                   </label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={sampledCount}
-                    onChange={(e) => setSampledCount(Math.max(1, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white font-bold"
-                    placeholder="ej. 30"
+                    onChange={(e) => setSampledCount(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Peso Total Muestra (g)
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Peso Total Muestra (g) *
                   </label>
                   <input
                     type="number"
-                    step="0.1"
-                    min="0.1"
+                    step="1"
+                    min="1"
                     required
                     value={totalSampleWeightG}
-                    onChange={(e) => setTotalSampleWeightG(Math.max(0.1, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white font-bold"
-                    placeholder="ej. 4500"
+                    onChange={(e) => setTotalSampleWeightG(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
-              </div>
-
-              {/* Cálculo en vivo de peso promedio */}
-              <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase block">
-                    Peso Promedio Calculado
-                  </span>
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                    {totalSampleWeightG} g / {sampledCount} peces
-                  </span>
-                </div>
-                <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">
-                  {calculatedAvgWeightG} g
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Mortalidad Observada (Opcional)
-                </label>
-                <div className="relative">
-                  <Skull className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Mortalidad Observada (Inds)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     value={observedMortality}
-                    onChange={(e) => setObservedMortality(Math.max(0, Number(e.target.value)))}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
-                    placeholder="0 si no hubo mortalidad"
+                    onChange={(e) => setObservedMortality(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Se restará de la población activa del estanque.
-                </span>
+              </div>
+
+              {/* Caja de Cálculo Dinámico de Peso */}
+              <div className="bg-[#EDF3EE] dark:bg-[#18231C] border border-[#2E4A36]/30 rounded-[4px] p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-semibold text-[#666159] dark:text-[#9E9689] block">
+                    Peso Promedio Resultante
+                  </span>
+                  <span className="font-serif font-bold text-xl text-[#2E4A36] dark:text-[#86A98F] metric-number">
+                    {calculatedAvgWeightG} g
+                  </span>
+                </div>
+                <span className="notebook-stamp text-[10px]">CÁLCULO INMEDIATO</span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Observaciones Técnicas (Opcional)
+                <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                  Observaciones de Campo (Sanidad, natas, apetito)
                 </label>
                 <textarea
                   rows={2}
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
-                  placeholder="Comportamiento, condición corporal, pigmentación, etc."
+                  placeholder="ej. Buen llenado estomacal, agallas limpias, agua con buena turbidez..."
+                  className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#E2D9CA] dark:border-[#332E27]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                  className="btn-secondary text-xs h-10 px-4"
                 >
                   {t('btn_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-2xl shadow-sm transition disabled:opacity-50"
+                  className="btn-primary text-xs h-10 px-4 disabled:opacity-50"
                 >
-                  {submitting ? 'Calculando...' : t('btn_save')}
+                  {submitting ? 'Asentando...' : 'Asentar Muestreo'}
                 </button>
               </div>
             </form>

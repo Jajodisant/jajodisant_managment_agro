@@ -14,11 +14,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('agro_theme') as Theme | null;
-      if (savedTheme) return savedTheme;
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
-      }
+      if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme;
     }
+    // Modo claro por defecto para legibilidad óptima bajo el sol en campo
     return 'light';
   });
 
