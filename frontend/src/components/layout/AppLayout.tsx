@@ -57,40 +57,40 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     setIsSyncing(false);
   };
 
-  // Colecciones estructuradas al estilo diario Day One / enciclopedia
+  // Colecciones estructuradas al estilo diario Day One / cuaderno de campo
   const navSections = [
     {
-      title: 'I. Cuaderno & Campo',
+      title: t('section_notebook'),
       items: [
-        { label: 'Inicio', path: '/', icon: Home },
-        { label: 'Alimentación de Campo', path: '/feeding', icon: Utensils },
-        { label: 'Biometrías & FCR', path: '/biometries', icon: Activity },
+        { label: t('nav_home'), path: '/', icon: Home },
+        { label: t('nav_feeding'), path: '/feeding', icon: Utensils },
+        { label: t('nav_biometries'), path: '/biometries', icon: Activity },
       ]
     },
     {
-      title: 'II. Instalaciones & Lotes',
+      title: t('section_facilities'),
       items: [
-        { label: 'Granjas & Estanques', path: '/farms', icon: Layers },
-        { label: 'Lotes & Siembras', path: '/batches', icon: Fish },
+        { label: t('nav_farms'), path: '/farms', icon: Layers },
+        { label: t('nav_batches'), path: '/batches', icon: Fish },
       ]
     },
     {
-      title: 'III. Consulta & Economía',
+      title: t('section_reference'),
       items: [
-        { label: 'Biblioteca Técnica', path: '/library', icon: BookOpen },
-        { label: 'Estadísticas', path: '/stats', icon: BarChart3 },
-        { label: 'Finanzas ($/kg)', path: '/finances', icon: DollarSign },
+        { label: t('nav_library'), path: '/library', icon: BookOpen },
+        { label: t('nav_stats'), path: '/stats', icon: BarChart3 },
+        { label: t('nav_finances'), path: '/finances', icon: DollarSign },
       ]
     }
   ];
 
   // Máximo 5 pestañas para celular
   const mobileTabs = [
-    { label: 'Inicio', path: '/', icon: Home },
-    { label: 'Granjas', path: '/farms', icon: Layers },
-    { label: 'Campo', path: '/feeding', icon: Utensils },
-    { label: 'Biblioteca', path: '/library', icon: BookOpen },
-    { label: 'Finanzas', path: '/finances', icon: DollarSign },
+    { label: t('nav_mobile_home'), path: '/', icon: Home },
+    { label: t('nav_mobile_farms'), path: '/farms', icon: Layers },
+    { label: t('nav_mobile_feeding'), path: '/feeding', icon: Utensils },
+    { label: t('nav_mobile_library'), path: '/library', icon: BookOpen },
+    { label: t('nav_mobile_finances'), path: '/finances', icon: DollarSign },
   ];
 
   return (
@@ -103,13 +103,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         <div className="p-6 border-b border-[#E2D9CA] dark:border-[#332E27]">
           <Link to="/" className="block">
             <span className="text-xs uppercase tracking-widest text-[#666159] dark:text-[#9E9689] font-medium block">
-              Registro Zootécnico
+              {t('app_tagline')}
             </span>
             <h1 className="text-2xl font-serif text-[#1F1D1A] dark:text-[#EDE6DA] font-semibold tracking-tight mt-0.5">
-              AgroPrecision
+              {t('app_name')}
             </h1>
             <span className="text-xs text-[#666159] dark:text-[#9E9689] block mt-1">
-              Peces & Cerdos de Precisión
+              {t('app_subtitle')}
             </span>
           </Link>
         </div>
@@ -157,7 +157,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 }`}
               />
               <span className="text-[#666159] dark:text-[#9E9689] font-medium">
-                {isOnline ? 'En línea' : 'Sin conexión'}
+                {isOnline ? t('status_online') : t('status_offline')}
               </span>
             </div>
             {pendingCount > 0 && (
@@ -165,10 +165,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 onClick={handleManualSync}
                 disabled={!isOnline || isSyncing}
                 className="text-[11px] font-bold text-[#8A4B2A] hover:underline flex items-center gap-1"
-                title="Sincronizar raciones locales"
+                title={t('btn_sync')}
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                {pendingCount} pendientes
+                {pendingCount} {t('status_pending')}
               </button>
             )}
           </div>
@@ -180,20 +180,20 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               <button
                 onClick={installApp}
                 className="flex items-center gap-1 hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA] transition"
-                title="Instalar como aplicación en este dispositivo"
+                title={t('btn_install_title')}
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Instalar</span>
+                <span>{t('install_menu_label')}</span>
               </button>
             ) : (
-              <span className="text-[11px] text-[#948D81]">Edición Campo</span>
+              <span className="text-[11px] text-[#948D81]">{t('edition_label')}</span>
             )}
 
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleLanguage}
                 className="hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA] font-semibold uppercase transition"
-                title="Cambiar idioma"
+                title={t('lang_toggle')}
               >
                 {language}
               </button>
@@ -221,10 +221,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         <div>
           <Link to="/" className="block">
             <span className="text-[10px] uppercase tracking-wider text-[#666159] dark:text-[#9E9689] block">
-              Cuaderno Zootécnico
+              {t('app_tagline')}
             </span>
             <span className="text-xl font-serif font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">
-              AgroPrecision
+              {t('app_name')}
             </span>
           </Link>
         </div>
@@ -235,14 +235,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             className={`w-2 h-2 rounded-full ${
               isOnline ? 'bg-[#2A6B3D]' : 'bg-[#9C631B]'
             }`}
-            title={isOnline ? 'En línea' : 'Sin conexión'}
+            title={isOnline ? t('status_online') : t('status_offline')}
           />
 
           {/* Menú de Ajustes Móvil Rápido */}
           <button
             onClick={() => setShowSettingsMenu(!showSettingsMenu)}
             className="p-2 text-[#666159] dark:text-[#9E9689] hover:text-[#1F1D1A] dark:hover:text-[#EDE6DA]"
-            title="Ajustes y opciones"
+            title={t('lang_toggle')}
           >
             <Globe className="w-4 h-4" />
           </button>
@@ -252,16 +252,16 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         {showSettingsMenu && (
           <div className="absolute right-4 top-14 bg-[#FBF8F1] dark:bg-[#1F1C18] border border-[#E2D9CA] dark:border-[#332E27] rounded-[5px] p-3 shadow-md z-50 text-xs space-y-2.5 w-48">
             <div className="flex justify-between items-center pb-2 border-b border-[#E2D9CA] dark:border-[#332E27]">
-              <span>Modo Oscuro:</span>
+              <span>{t('theme_toggle')}:</span>
               <button
                 onClick={toggleTheme}
                 className="px-2 py-1 rounded bg-[#EBE5D8] dark:bg-[#28241F] font-semibold"
               >
-                {theme === 'light' ? 'Desactivado' : 'Activado'}
+                {theme === 'light' ? t('dark_mode_inactive') : t('dark_mode_active')}
               </button>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-[#E2D9CA] dark:border-[#332E27]">
-              <span>Idioma:</span>
+              <span>{t('lang_toggle')}:</span>
               <button
                 onClick={toggleLanguage}
                 className="px-2 py-1 rounded bg-[#EBE5D8] dark:bg-[#28241F] font-semibold uppercase"
@@ -278,7 +278,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 className="w-full text-left font-semibold text-[#2E4A36] dark:text-[#86A98F] pt-1 flex items-center gap-1"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Instalar en Teléfono</span>
+                <span>{t('install_menu_label')}</span>
               </button>
             )}
           </div>

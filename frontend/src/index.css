@@ -37,30 +37,62 @@
   padding-bottom: max(env(safe-area-inset-bottom, 0.75rem), 0.75rem);
 }
 
-/* Botones de acción sobrios estilo enciclopedia (mínimo 48px de alto para campo) */
+/* Botones de acción sobrios estilo cuaderno / enciclopedia (mínimo 48px de alto para campo) */
 .btn-action {
-  @apply min-h-[48px] px-5 py-2.5 text-base font-semibold rounded-[5px] border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply min-h-[48px] px-5 py-2.5 text-base font-semibold rounded-[5px] border transition-all flex items-center justify-center gap-2 select-none active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
 }
 
 .btn-primary {
-  @apply btn-action bg-[#2E4A36] text-white border-[#243B2B] hover:bg-[#243B2B];
+  @apply btn-action bg-[#2E4A36] text-[#FBF8F1] border-[#243B2B] hover:bg-[#243B2B] shadow-sm;
 }
 
 .btn-secondary {
-  @apply btn-action bg-[#FBF8F1] text-[#1F1D1A] border-[#E2D9CA] hover:bg-[#F2ECE0] dark:bg-[#1F1C18] dark:text-[#EDE6DA] dark:border-[#332E27] dark:hover:bg-[#28241F];
+  @apply btn-action bg-[#FBF8F1] text-[#1F1D1A] border-[#DDD4C4] hover:bg-[#F2ECE0] dark:bg-[#1F1C18] dark:text-[#EDE6DA] dark:border-[#38342F] dark:hover:bg-[#28241F];
 }
 
 .btn-earth {
-  @apply btn-action bg-[#8A4B2A] text-white border-[#6E3A20] hover:bg-[#6E3A20];
+  @apply btn-action bg-[#8A4B2A] text-white border-[#6E3A20] hover:bg-[#6E3A20] shadow-sm;
 }
 
 .btn-piscicola {
-  @apply btn-action bg-[#3B5568] text-white border-[#2C404E] hover:bg-[#2C404E];
+  @apply btn-action bg-[#3B5568] text-white border-[#2C404E] hover:bg-[#2C404E] shadow-sm;
+}
+
+/* Botón de campo (retrocompatibilidad para todas las páginas) */
+.btn-field {
+  @apply btn-action bg-[#2E4A36] text-[#FBF8F1] border-[#243B2B] hover:bg-[#243B2B] shadow-sm;
 }
 
 /* Tarjeta sobria estilo ficha de cuaderno / enciclopedia */
 .card-paper {
   @apply bg-[#FBF8F1] dark:bg-[#1F1C18] border border-[#E2D9CA] dark:border-[#332E27] rounded-[6px] p-5 sm:p-6 transition-colors;
+}
+
+/* Tarjeta estilo Cuaderno de Campo con línea de margen zootécnico */
+.card-notebook {
+  @apply bg-[#FBF8F1] dark:bg-[#1F1C18] border border-[#E2D9CA] dark:border-[#332E27] border-l-[4px] border-l-[#8A4B2A]/70 rounded-[6px] p-5 sm:p-6 transition-colors relative;
+}
+
+.card-notebook-forest {
+  @apply bg-[#FBF8F1] dark:bg-[#1F1C18] border border-[#E2D9CA] dark:border-[#332E27] border-l-[4px] border-l-[#2E4A36] rounded-[6px] p-5 sm:p-6 transition-colors relative;
+}
+
+/* Sello / Stamp de cuaderno para fechas y códigos */
+.notebook-stamp {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider border border-[#DDD4C4] dark:border-[#38342F] bg-[#F4EFE3]/60 dark:bg-[#141210]/60 rounded-[3px] text-[#666159] dark:text-[#9E9689];
+}
+
+/* Semáforos zootécnicos sobrios para cuaderno */
+.status-badge-green {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-[4px] border border-[#2A6B3D]/30 bg-[#2A6B3D]/10 text-[#2A6B3D] dark:text-[#86A98F];
+}
+
+.status-badge-amber {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-[4px] border border-[#9C631B]/30 bg-[#9C631B]/10 text-[#9C631B] dark:text-[#E0A868];
+}
+
+.status-badge-red {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-[4px] border border-[#A32A26]/30 bg-[#A32A26]/10 text-[#A32A26] dark:text-[#E5807D];
 }
 
 /* Línea separadora sutil de 1px */
