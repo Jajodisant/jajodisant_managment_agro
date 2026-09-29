@@ -14,7 +14,8 @@ import {
   Globe,
   Download,
   RefreshCw,
-  Home
+  Home,
+  Stethoscope
 } from 'lucide-react';
 import { getPendingFeedingsCount, syncPendingFeedings } from '../../services/offlineSync';
 import { useTheme } from '../../context/ThemeContext';
@@ -77,6 +78,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     {
       title: t('section_reference'),
       items: [
+        { label: t('nav_vet'), path: '/vet-consult', icon: Stethoscope },
         { label: t('nav_library'), path: '/library', icon: BookOpen },
         { label: t('nav_stats'), path: '/stats', icon: BarChart3 },
         { label: t('nav_finances'), path: '/finances', icon: DollarSign },

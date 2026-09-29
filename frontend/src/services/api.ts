@@ -11,7 +11,9 @@ import {
   CostRecord,
   HarvestOptimization,
   SwineBarn,
-  SwinePen
+  SwinePen,
+  VetConsultation,
+  CreateVetConsultationRequest
 } from '../types';
 
 const BASE_URL = '/api/v1';
@@ -158,5 +160,13 @@ export const api = {
     drinkerType?: string;
     drinkerCount?: number;
     feederSpaces?: number;
-  }) => request<SwinePen>('/swine/pens', { method: 'POST', body: JSON.stringify(data) })
+  }) => request<SwinePen>('/swine/pens', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Consultorio Veterinario Asistido por IA (HU-12)
+  createVetConsultation: (data: CreateVetConsultationRequest) =>
+    request<VetConsultation>('/advisory/vet/consultations', { method: 'POST', body: JSON.stringify(data) }),
+  getVetConsultationsByFarm: (farmId: string) =>
+    request<VetConsultation[]>(`/advisory/vet/consultations/farm/${farmId}`),
+  getVetConsultationsByBatch: (batchId: string) =>
+    request<VetConsultation[]>(`/advisory/vet/consultations/batch/${batchId}`)
 };
