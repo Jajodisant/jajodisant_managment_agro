@@ -24,6 +24,7 @@ const translations: Record<Language, Record<string, string>> = {
     nav_library: 'Biblioteca Técnica',
     nav_stats: 'Estadísticas & Curvas',
     nav_finances: 'Finanzas ($/kg)',
+    nav_vet: 'Consultorio Veterinario IA',
 
     // Mobile Navigation
     nav_mobile_home: 'Inicio',
@@ -200,6 +201,7 @@ const translations: Record<Language, Record<string, string>> = {
     nav_library: 'Technical Library',
     nav_stats: 'Statistics & Curves',
     nav_finances: 'Finances ($/kg)',
+    nav_vet: 'AI Veterinary Clinic',
 
     // Mobile Navigation
     nav_mobile_home: 'Home',

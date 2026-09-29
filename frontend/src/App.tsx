@@ -9,6 +9,7 @@ import { FeedingPage } from './pages/FeedingPage';
 import { FinancesPage } from './pages/FinancesPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { StatsPage } from './pages/StatsPage';
+import { VetConsultationPage } from './pages/VetConsultationPage';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { PwaProvider } from './context/PwaContext';
@@ -28,6 +29,7 @@ export const App: React.FC = () => {
               <Route path="/finances" element={<FinancesPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/stats" element={<StatsPage />} />
+              <Route path="/vet-consult" element={<VetConsultationPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AppLayout>

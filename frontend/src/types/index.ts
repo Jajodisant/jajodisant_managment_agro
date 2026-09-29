@@ -200,4 +200,34 @@ export interface SwinePen {
   createdAt: string;
 }
 
+export interface DifferentialDiagnosis {
+  diseaseName: string;
+  pathogen: string;
+  matchProbability: number;
+  keyIndicator: string;
+}
 
+export interface VetConsultation {
+  id: string;
+  farmId: string;
+  batchId?: string;
+  batchCode?: string;
+  productionType: 'PISCICULTURA' | 'PORCICULTURA';
+  symptomsDescription: string;
+  presumptiveDiagnosis: string;
+  urgencyLevel: 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
+  confidencePercentage: number;
+  biosecurityProtocol: string;
+  treatmentRecommendation: string;
+  samplingInstructions?: string;
+  differentials: DifferentialDiagnosis[];
+  veterinarianReviewed: boolean;
+  createdAt: string;
+}
+
+export interface CreateVetConsultationRequest {
+  farmId: string;
+  batchId?: string;
+  productionType: 'PISCICULTURA' | 'PORCICULTURA';
+  symptomsDescription: string;
+}
