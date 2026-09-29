@@ -166,3 +166,35 @@ export interface HarvestOptimization {
   isPastOptimalPoint: boolean;
 }
 
+export interface SwineBarn {
+  id: string;
+  farmId: string;
+  codeName: string;
+  barnType: string;
+  lengthM: number;
+  widthM: number;
+  totalAreaM2: number;
+  hasAutomaticVentilation: boolean;
+  hasCoolingSystem: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface SwinePen {
+  id: string;
+  barnId: string;
+  penCode: string;
+  phase: string;
+  lengthM: number;
+  widthM: number;
+  areaM2: number;
+  drinkerType: string;
+  drinkerCount: number;
+  feederSpaces: number;
+  maxDensityM2PerPig: number;
+  maxCapacityPigs: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+

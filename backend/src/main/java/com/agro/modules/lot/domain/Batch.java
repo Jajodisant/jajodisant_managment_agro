@@ -56,6 +56,13 @@ public class Batch {
     @JoinColumn(name = "pond_id")
     private Pond pond;
 
+    /**
+     * Corral donde se aloja el lote si es producción porcícola.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pen_id")
+    private com.agro.modules.swine.domain.SwinePen pen;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "species_id", nullable = false)
     private Species species;

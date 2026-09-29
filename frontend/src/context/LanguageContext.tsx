@@ -150,6 +150,25 @@ const translations: Record<Language, Record<string, string>> = {
     hu07_status_approaching: 'Acabado Final',
     hu07_status_growth: 'Crecimiento Eficiente',
     hu07_recommended_date: 'Fecha Sugerida de Cosecha',
+
+    // HU-10 Swine Infrastructure
+    tab_ponds: 'Estanques (Piscicultura)',
+    tab_swine: 'Galpones & Corrales (Porcicultura HU-10)',
+    btn_new_barn: 'Nuevo Galpón',
+    btn_new_pen: 'Nuevo Corral',
+    barns_section_title: 'Galpones de Alojamiento Porcícola',
+    pens_section_title: 'Corrales y Aforo Zootécnico',
+    no_barns_title: 'No hay galpones registrados en esta granja',
+    no_barns_desc: 'Registra naves o galpones para estructurar los corrales por etapas zootécnicas (precebo, levante, ceba, maternidad).',
+    no_pens_desc: 'Este galpón aún no tiene corrales. Agrega corrales calculando el aforo de cabezas según su área.',
+    stage_precebo: 'Precebo (0.35 m²/lechón)',
+    stage_levante: 'Levante (0.65 m²/cerdo)',
+    stage_ceba: 'Ceba / Finalización (1.00 m²/cerdo)',
+    stage_maternidad: 'Maternidad (4.50 m²/cerda)',
+    stage_gestacion: 'Gestación (2.25 m²/cerda)',
+    capacity_heads: 'Aforo Máximo de Cabezas',
+    drinker_label: 'Bebederos',
+    feeder_label: 'Bocas de Comedero',
   },
   en: {
     // App & Header
@@ -298,6 +317,25 @@ const translations: Record<Language, Record<string, string>> = {
     hu07_status_approaching: 'Final Finishing',
     hu07_status_growth: 'Efficient Growth',
     hu07_recommended_date: 'Suggested Harvest Date',
+
+    // HU-10 Swine Infrastructure
+    tab_ponds: 'Ponds (Aquaculture)',
+    tab_swine: 'Barns & Pens (Swine HU-10)',
+    btn_new_barn: 'New Barn',
+    btn_new_pen: 'New Pen',
+    barns_section_title: 'Swine Housing Barns',
+    pens_section_title: 'Pens & Zootechnical Capacity',
+    no_barns_title: 'No barns registered in this farm',
+    no_barns_desc: 'Register barns to organize pens by zootechnical phase (nursery, grower, finisher, farrowing).',
+    no_pens_desc: 'This barn has no pens yet. Add pens with automatic stocking head count calculations.',
+    stage_precebo: 'Nursery (0.35 m²/piglet)',
+    stage_levante: 'Grower (0.65 m²/pig)',
+    stage_ceba: 'Finisher (1.00 m²/pig)',
+    stage_maternidad: 'Farrowing (4.50 m²/sow)',
+    stage_gestacion: 'Gestation (2.25 m²/sow)',
+    capacity_heads: 'Max Capacity (Heads)',
+    drinker_label: 'Drinkers',
+    feeder_label: 'Feeder Spaces',
   }
 };
 
