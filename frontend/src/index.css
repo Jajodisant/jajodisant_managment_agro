@@ -4,12 +4,36 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 min-h-screen font-sans;
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen font-sans;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Optimización para botones táctiles en campo */
+/* Optimización para teléfonos con notch y barras de inicio */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Botones táctiles de campo ergonómicos */
 .btn-field {
-  @apply py-3 px-5 text-base font-semibold rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2;
+  @apply py-3 px-5 text-base font-semibold rounded-2xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2;
+}
+
+/* Scrollbar suave para tablas y listas */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
 }
