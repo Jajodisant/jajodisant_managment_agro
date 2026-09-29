@@ -344,7 +344,7 @@ jajodisant_managment_agro/
 ## 📊 Roadmap y Estado de Avance
 
 ```
-Progreso General del MVP (Fase 1): [██████████████░░░░░░░░░░░░░░░░░░░░░░░░] 36%
+Progreso General del MVP (Fase 1): [█████████████████████████████░░░░░░░░░░░] 72%
 ```
 
 * **Fase 1: MVP Piscícola Operativo & Costos Directos (Meses 1 - 3):**
@@ -352,13 +352,13 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Base de Datos:** Migración Flyway `V1__init_schema.sql` con 9 tablas, índices y vistas (PR #2).
   * [x] **Dominio JPA:** 10 entidades mapeadas y probadas en compilación (PR #3).
   * [x] **Persistencia Farm & Pond:** Repositorios JPA y DTOs inmutables con Javadoc exhaustivo (PR #5).
-  * [ ] **Lógica & API Farm & Pond:** Servicios zootécnicos de aforo (HU-01) y endpoints REST (En curso).
-  * [ ] **Catálogo de Especies & Tablas Nutricionales:** Rangos de peso y curvas de alimentación.
-  * [ ] **Lotes y Siembras (HU-02):** Ciclo productivo y prevención de sobrecupo en siembra.
-  * [ ] **Biometrías y Conversión FCR (HU-05):** Cálculo automático de FCR y semáforos de eficiencia.
-  * [ ] **Alimentación y Sync Offline (HU-03, HU-04):** Registro ultrarrápido con Dexie.js / IndexedDB.
+  * [x] **Lógica & API Farm & Pond:** Servicios zootécnicos de aforo (HU-01) y endpoints REST (PR #6).
+  * [x] **Catálogo de Especies & Tablas Nutricionales:** Curvas de alimentación por peso y seeding zootécnico (PR #7).
+  * [x] **Lotes y Siembras (HU-02):** Ciclo productivo y alerta preventiva de sobrecupo en siembra (PR #7).
+  * [x] **Biometrías y Conversión FCR (HU-05):** Muestreos, cálculo de GMD y FCR acumulado con semáforo verde/ámbar/rojo (PR #7).
+  * [x] **Alimentación y Sync Offline (HU-03, HU-04):** Cálculo de cuota según biomasa, horarios y sincronización en bloque (PR #7).
   * [ ] **Costeo Real por Kilo (HU-06):** Costo de producción acumulado en tiempo real ($/kg).
-  * [ ] **Frontend PWA:** Interfaz táctil de alto contraste para campo.
+  * [ ] **Frontend PWA:** Interfaz táctil de alto contraste para campo con persistencia Dexie.js.
 
 * **Fase 2: Motor Financiero Completo & Cosecha Óptima (Meses 4 - 5):**
   * [ ] Costeo indirecto (energía, depreciación de geomembrana y motobombas, jornales).
