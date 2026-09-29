@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
   plugins: [
@@ -9,11 +11,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Agro Management - Sistema Piscícola',
-        short_name: 'AgroPiscícola',
-        description: 'Gestión agropecuaria integral con operatividad offline y asesor zootécnico',
-        theme_color: '#16a34a',
-        background_color: '#f8fafc',
+        name: 'AgroPrecision - Peces & Cerdos IA',
+        short_name: 'AgroPrecision',
+        description: 'Gestión zootécnica y financiera de precisión para peces y cerdos con IA y modo offline',
+        theme_color: '#0d9488',
+        background_color: '#020617',
         display: 'standalone',
         icons: [
           {
@@ -30,8 +32,17 @@ export default defineConfig({
       }
     })
   ],
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss,
+        autoprefixer,
+      ],
+    },
+  },
   server: {
     port: 5173,
+    host: true,
     proxy: {
       '/api/v1': {
         target: 'http://localhost:8080',
