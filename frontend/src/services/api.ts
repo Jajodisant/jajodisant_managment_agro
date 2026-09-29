@@ -9,7 +9,9 @@ import {
   DailyFeedingPlan,
   BatchFinancialSummary,
   CostRecord,
-  HarvestOptimization
+  HarvestOptimization,
+  SwineBarn,
+  SwinePen
 } from '../types';
 
 const BASE_URL = '/api/v1';
@@ -132,5 +134,28 @@ export const api = {
   getFarmHarvestOptimizations: (farmId: string, marketPrice?: number) => {
     const params = marketPrice ? `?marketPrice=${marketPrice}` : '';
     return request<HarvestOptimization[]>(`/advisory/harvest-optimization/farm/${farmId}${params}`);
-  }
+  },
+
+  // Infraestructura Porcícola (HU-10)
+  getSwineBarns: (farmId: string) => request<SwineBarn[]>(`/swine/barns/farm/${farmId}`),
+  createSwineBarn: (data: {
+    farmId: string;
+    codeName: string;
+    barnType?: string;
+    lengthM?: number;
+    widthM?: number;
+    hasAutomaticVentilation?: boolean;
+    hasCoolingSystem?: boolean;
+  }) => request<SwineBarn>('/swine/barns', { method: 'POST', body: JSON.stringify(data) }),
+  getSwinePens: (barnId: string) => request<SwinePen[]>(`/swine/pens/barn/${barnId}`),
+  createSwinePen: (data: {
+    barnId: string;
+    penCode: string;
+    phase?: string;
+    lengthM: number;
+    widthM: number;
+    drinkerType?: string;
+    drinkerCount?: number;
+    feederSpaces?: number;
+  }) => request<SwinePen>('/swine/pens', { method: 'POST', body: JSON.stringify(data) })
 };
