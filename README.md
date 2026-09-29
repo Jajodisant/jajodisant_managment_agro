@@ -344,7 +344,7 @@ jajodisant_managment_agro/
 ## 📊 Roadmap y Estado de Avance
 
 ```
-Progreso General del MVP (Fase 1): [█████████████████████████████░░░░░░░░░░░] 72%
+Progreso General del MVP (Fase 1): [████████████████████████████████████████] 100%
 ```
 
 * **Fase 1: MVP Piscícola Operativo & Costos Directos (Meses 1 - 3):**
@@ -357,8 +357,9 @@ Progreso General del MVP (Fase 1): [██████████████�
   * [x] **Lotes y Siembras (HU-02):** Ciclo productivo y alerta preventiva de sobrecupo en siembra (PR #7).
   * [x] **Biometrías y Conversión FCR (HU-05):** Muestreos, cálculo de GMD y FCR acumulado con semáforo verde/ámbar/rojo (PR #7).
   * [x] **Alimentación y Sync Offline (HU-03, HU-04):** Cálculo de cuota según biomasa, horarios y sincronización en bloque (PR #7).
-  * [ ] **Costeo Real por Kilo (HU-06):** Costo de producción acumulado en tiempo real ($/kg).
-  * [ ] **Frontend PWA:** Interfaz táctil de alto contraste para campo con persistencia Dexie.js.
+  * [x] **Costeo Real por Kilo (HU-06):** Costo de producción acumulado en tiempo real ($/kg) con desglose por categoría (PR #7 / #8).
+  * [x] **Frontend PWA Offline-First:** Interfaz completa en React 18 + TypeScript + TailwindCSS + Dexie.js (IndexedDB) con sincronización automática de raciones de campo (PR #8).
+  * [x] **Dockerización Multi-Stage:** Dockerfile para Backend (Maven + JRE 21 Alpine) y Frontend (Node + Nginx Alpine) orquestados mediante docker-compose (PR #8).
 
 * **Fase 2: Motor Financiero Completo & Cosecha Óptima (Meses 4 - 5):**
   * [ ] Costeo indirecto (energía, depreciación de geomembrana y motobombas, jornales).

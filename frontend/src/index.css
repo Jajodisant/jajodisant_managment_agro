@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 min-h-screen font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Optimización para botones táctiles en campo */
+.btn-field {
+  @apply py-3 px-5 text-base font-semibold rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2;
+}
