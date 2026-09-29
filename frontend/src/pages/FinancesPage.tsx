@@ -14,8 +14,10 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Farm, Batch, BatchFinancialSummary } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 export const FinancesPage: React.FC = () => {
+  const { t } = useTranslation();
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarmId, setSelectedFarmId] = useState<string>('');
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -150,48 +152,48 @@ export const FinancesPage: React.FC = () => {
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-emerald-600" />
-            Finanzas & Costo de Producción ($/kg)
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <DollarSign className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+            {t('finances_title')}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            HU-06: Control de costos directos (alimento, semilla) e indirectos (energía, nómina) y rentabilidad por kilo producido.
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+            {t('finances_subtitle')}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => selectedBatchId && loadFinancialSummary(selectedBatchId)}
-            className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition shadow-sm"
+            className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm"
             title="Recargar finanzas"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl shadow-sm transition"
           >
             <Plus className="w-4 h-4" />
-            Registrar Gasto
+            {t('btn_record_cost')}
           </button>
         </div>
       </div>
 
       {/* Selectores de Granja y Lote */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <Layers className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 transition-colors">
+          <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <div className="flex-1">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
               Seleccionar Granja
             </label>
             <select
               value={selectedFarmId}
               onChange={(e) => setSelectedFarmId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {farms.map((farm) => (
-                <option key={farm.id} value={farm.id}>
+                <option key={farm.id} value={farm.id} className="dark:bg-slate-900">
                   {farm.name}
                 </option>
               ))}
@@ -199,23 +201,23 @@ export const FinancesPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <DollarSign className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 transition-colors">
+          <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <div className="flex-1">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
               Lote Contable
             </label>
             <select
               value={selectedBatchId}
               onChange={(e) => setSelectedBatchId(e.target.value)}
               disabled={batches.length === 0}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
             >
               {batches.length === 0 ? (
                 <option value="">No hay lotes en esta granja</option>
               ) : (
                 batches.map((batch) => (
-                  <option key={batch.id} value={batch.id}>
+                  <option key={batch.id} value={batch.id} className="dark:bg-slate-900">
                     Lote {batch.batchCode} - {batch.speciesCommonName}
                   </option>
                 ))
@@ -227,14 +229,14 @@ export const FinancesPage: React.FC = () => {
 
       {/* Alertas */}
       {errorMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-red-700 text-sm">
+        <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 flex items-start gap-3 text-red-700 dark:text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
           <div>{errorMessage}</div>
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3 text-emerald-800 text-sm">
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3 text-emerald-800 dark:text-emerald-300 text-sm">
           <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
           <div>{successMessage}</div>
         </div>
@@ -242,28 +244,28 @@ export const FinancesPage: React.FC = () => {
 
       {/* KPI Card Destacada: Costo de Producción $/kg (HU-06) */}
       {financialSummary && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 sm:p-8 mb-8 transition-colors">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:border-r lg:border-slate-200 pr-0 lg:pr-6 flex flex-col justify-between">
+            <div className="lg:border-r lg:border-slate-200 dark:lg:border-slate-800 pr-0 lg:pr-6 flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                   Indicador de Rentabilidad HU-06
                 </span>
-                <h3 className="text-slate-500 font-semibold text-sm mt-3">
-                  Costo de Producción por Kilo
+                <h3 className="text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm mt-3">
+                  Costo de Producción por Kilo Vivo
                 </h3>
-                <div className="text-4xl sm:text-5xl font-black text-slate-900 mt-2">
+                <div className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white mt-2">
                   ${Math.round(financialSummary.costPerKgProduced).toLocaleString('es-CO')}
                   <span className="text-base text-slate-400 font-normal"> / kg</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                   Calculado dividiendo el costo total acumulado sobre la biomasa actual estimada ({financialSummary.currentBiomassKg.toFixed(1)} kg).
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
-                <span className="text-slate-600 font-medium">Inversión Total Lote:</span>
-                <span className="font-extrabold text-slate-900 text-lg">
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400 font-medium">Inversión Total Lote:</span>
+                <span className="font-black text-slate-900 dark:text-white text-lg">
                   ${Math.round(financialSummary.totalCumulativeCost).toLocaleString('es-CO')} COP
                 </span>
               </div>
@@ -271,8 +273,8 @@ export const FinancesPage: React.FC = () => {
 
             {/* Desglose de Categorías */}
             <div className="lg:col-span-2 flex flex-col justify-between">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <PieChart className="w-4 h-4 text-emerald-600" />
+              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Desglose Estructural de Costos
               </h4>
 
@@ -280,10 +282,10 @@ export const FinancesPage: React.FC = () => {
                 {/* Alimento */}
                 <div>
                   <div className="flex justify-between text-xs font-bold mb-1">
-                    <span className="text-slate-700">Alimento Balanceado ({feedPct}%)</span>
-                    <span className="text-emerald-700">${Math.round(financialSummary.feedCost).toLocaleString('es-CO')}</span>
+                    <span className="text-slate-700 dark:text-slate-300">Alimento Balanceado ({feedPct}%)</span>
+                    <span className="text-emerald-700 dark:text-emerald-400 font-black">${Math.round(financialSummary.feedCost).toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
                       className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${feedPct}%` }}
@@ -291,13 +293,13 @@ export const FinancesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Alevinos */}
+                {/* Alevinos / Semilla */}
                 <div>
                   <div className="flex justify-between text-xs font-bold mb-1">
-                    <span className="text-slate-700">Alevinos / Semilla ({fingerlingsPct}%)</span>
-                    <span className="text-blue-700">${Math.round(financialSummary.fingerlingsCost).toLocaleString('es-CO')}</span>
+                    <span className="text-slate-700 dark:text-slate-300">Alevinos / Semilla / Lechones ({fingerlingsPct}%)</span>
+                    <span className="text-blue-700 dark:text-blue-400 font-black">${Math.round(financialSummary.fingerlingsCost).toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
                       className="bg-blue-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${fingerlingsPct}%` }}
@@ -308,10 +310,10 @@ export const FinancesPage: React.FC = () => {
                 {/* Mano de Obra */}
                 <div>
                   <div className="flex justify-between text-xs font-bold mb-1">
-                    <span className="text-slate-700">Mano de Obra & Operarios ({laborPct}%)</span>
-                    <span className="text-amber-700">${Math.round(financialSummary.laborCost).toLocaleString('es-CO')}</span>
+                    <span className="text-slate-700 dark:text-slate-300">Mano de Obra & Operarios ({laborPct}%)</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-black">${Math.round(financialSummary.laborCost).toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
                       className="bg-amber-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${laborPct}%` }}
@@ -322,10 +324,10 @@ export const FinancesPage: React.FC = () => {
                 {/* Energía y Servicios */}
                 <div>
                   <div className="flex justify-between text-xs font-bold mb-1">
-                    <span className="text-slate-700">Energía Eléctrica & Combustible ({energyPct}%)</span>
-                    <span className="text-purple-700">${Math.round(financialSummary.energyCost).toLocaleString('es-CO')}</span>
+                    <span className="text-slate-700 dark:text-slate-300">Energía Eléctrica & Combustible ({energyPct}%)</span>
+                    <span className="text-purple-700 dark:text-purple-400 font-black">${Math.round(financialSummary.energyCost).toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
                       className="bg-purple-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${energyPct}%` }}
@@ -336,10 +338,10 @@ export const FinancesPage: React.FC = () => {
                 {/* Otros */}
                 <div>
                   <div className="flex justify-between text-xs font-bold mb-1">
-                    <span className="text-slate-700">Otros Costos / Mantenimiento ({otherPct}%)</span>
-                    <span className="text-slate-700">${Math.round(financialSummary.otherCosts).toLocaleString('es-CO')}</span>
+                    <span className="text-slate-700 dark:text-slate-300">Otros Costos / Mantenimiento ({otherPct}%)</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-black">${Math.round(financialSummary.otherCosts).toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
                       className="bg-slate-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${otherPct}%` }}
@@ -355,11 +357,11 @@ export const FinancesPage: React.FC = () => {
       {/* Modal de Registro de Gasto */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 overflow-y-auto max-h-[90vh] transition-colors">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Registrar Costo o Insumo</h3>
-                <p className="text-xs text-slate-500">Asignación directa a lote o gastos generales de la granja</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Registrar Costo o Insumo</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Asignación directa a lote o gastos generales de la granja</p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -371,7 +373,7 @@ export const FinancesPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Fecha del Desembolso
                 </label>
                 <div className="relative">
@@ -381,13 +383,13 @@ export const FinancesPage: React.FC = () => {
                     required
                     value={expenseDate}
                     onChange={(e) => setExpenseDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Categoría de Costo
                 </label>
                 <div className="relative">
@@ -395,10 +397,10 @@ export const FinancesPage: React.FC = () => {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold dark:text-white"
                   >
                     <option value="FEED">Alimento Balanceado</option>
-                    <option value="FINGERLINGS">Alevinos / Semilla</option>
+                    <option value="FINGERLINGS">Alevinos / Semilla / Lechones</option>
                     <option value="LABOR">Mano de Obra & Salarios</option>
                     <option value="ENERGY">Energía & Combustible</option>
                     <option value="OTHER">Otros Gastos Operativos</option>
@@ -407,7 +409,7 @@ export const FinancesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Monto Total (COP)
                 </label>
                 <div className="relative">
@@ -419,14 +421,14 @@ export const FinancesPage: React.FC = () => {
                     required
                     value={totalAmount}
                     onChange={(e) => setTotalAmount(Math.max(1, Number(e.target.value)))}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 dark:text-white"
                     placeholder="100000"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Descripción o Concepto
                 </label>
                 <div className="relative">
@@ -436,26 +438,26 @@ export const FinancesPage: React.FC = () => {
                     required
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
                     placeholder="ej. Pago jornal muestreo y limpieza estanque"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 >
-                  Cancelar
+                  {t('btn_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-2xl shadow-sm transition disabled:opacity-50"
                 >
-                  {submitting ? 'Guardando...' : 'Registrar Gasto'}
+                  {submitting ? 'Guardando...' : t('btn_save')}
                 </button>
               </div>
             </form>
