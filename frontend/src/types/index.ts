@@ -52,6 +52,9 @@ export interface Batch {
   farmName: string;
   pondId: string | null;
   pondCodeName: string | null;
+  penId?: string | null;
+  penCode?: string | null;
+  barnCodeName?: string | null;
   speciesId: string;
   speciesCommonName: string;
   batchCode: string;

@@ -17,6 +17,9 @@ public record BatchResponse(
     String farmName,
     UUID pondId,
     String pondCodeName,
+    UUID penId,
+    String penCode,
+    String barnCodeName,
     UUID speciesId,
     String speciesCommonName,
     String batchCode,
@@ -31,6 +34,31 @@ public record BatchResponse(
     BigDecimal overcrowdingPercentage,
     OffsetDateTime createdAt
 ) {
+    public BatchResponse(
+        UUID id,
+        UUID farmId,
+        String farmName,
+        UUID pondId,
+        String pondCodeName,
+        UUID speciesId,
+        String speciesCommonName,
+        String batchCode,
+        LocalDate stockingDate,
+        Integer initialQuantity,
+        BigDecimal initialAvgWeightG,
+        BigDecimal initialBiomassKg,
+        String status,
+        LocalDate estimatedHarvestDate,
+        LocalDate actualHarvestDate,
+        boolean overcrowdingWarning,
+        BigDecimal overcrowdingPercentage,
+        OffsetDateTime createdAt
+    ) {
+        this(id, farmId, farmName, pondId, pondCodeName, null, null, null, speciesId, speciesCommonName,
+             batchCode, stockingDate, initialQuantity, initialAvgWeightG, initialBiomassKg, status,
+             estimatedHarvestDate, actualHarvestDate, overcrowdingWarning, overcrowdingPercentage, createdAt);
+    }
+
     public static BatchResponse fromEntity(Batch batch, boolean overcrowdingWarning, BigDecimal overcrowdingPercentage) {
         BigDecimal initialBiomass = BigDecimal.ZERO;
         if (batch.getInitialQuantity() != null && batch.getInitialAvgWeightG() != null) {
@@ -39,12 +67,20 @@ public record BatchResponse(
                     .divide(new BigDecimal("1000.00"), 2, RoundingMode.HALF_UP);
         }
 
+        UUID penId = batch.getPen() != null ? batch.getPen().getId() : null;
+        String penCode = batch.getPen() != null ? batch.getPen().getPenCode() : null;
+        String barnCodeName = (batch.getPen() != null && batch.getPen().getBarn() != null)
+                ? batch.getPen().getBarn().getCodeName() : null;
+
         return new BatchResponse(
             batch.getId(),
             batch.getFarm() != null ? batch.getFarm().getId() : null,
             batch.getFarm() != null ? batch.getFarm().getName() : null,
             batch.getPond() != null ? batch.getPond().getId() : null,
             batch.getPond() != null ? batch.getPond().getCodeName() : null,
+            penId,
+            penCode,
+            barnCodeName,
             batch.getSpecies() != null ? batch.getSpecies().getId() : null,
             batch.getSpecies() != null ? batch.getSpecies().getCommonName() : null,
             batch.getBatchCode(),

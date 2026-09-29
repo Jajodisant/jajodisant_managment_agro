@@ -23,13 +23,15 @@ import com.agro.modules.lot.dto.UpdateBatchStatusRequest;
 import com.agro.modules.lot.repository.BatchRepository;
 import com.agro.modules.species.domain.Species;
 import com.agro.modules.species.service.SpeciesService;
+import com.agro.modules.swine.domain.SwinePen;
+import com.agro.modules.swine.repository.SwinePenRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio de aplicación para la gestión de lotes biológicos y siembras.
- * Implementa la validación zootécnica de alerta preventiva de aforo y sobrepoblación (HU-02).
+ * Implementa la validación zootécnica de alerta preventiva de aforo y sobrepoblación (HU-02, HU-10, HU-11).
  */
 @Slf4j
 @Service
@@ -42,6 +44,7 @@ public class BatchService {
     private final BatchRepository batchRepository;
     private final FarmService farmService;
     private final PondService pondService;
+    private final SwinePenRepository swinePenRepository;
     private final SpeciesService speciesService;
 
     /**
@@ -107,9 +110,42 @@ public class BatchService {
             }
         }
 
+        // 5. Validar corral porcino y aforo zootécnico (HU-10/HU-11)
+        SwinePen pen = null;
+        if (request.penId() != null) {
+            pen = swinePenRepository.findById(request.penId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Corral", request.penId()));
+
+            if (Boolean.FALSE.equals(pen.getIsActive())) {
+                throw new BusinessRuleException(
+                    String.format("El corral '%s' se encuentra inactivo o en desinfección sanitaria", pen.getPenCode()));
+            }
+
+            Integer maxCapacityPigs = pen.getMaxCapacityPigs();
+            if (maxCapacityPigs != null && request.initialQuantity() > maxCapacityPigs) {
+                hasOvercrowding = true;
+                int diff = request.initialQuantity() - maxCapacityPigs;
+                overcrowdingPct = BigDecimal.valueOf(diff).multiply(new BigDecimal("100.00"))
+                        .divide(BigDecimal.valueOf(maxCapacityPigs), 2, RoundingMode.HALF_UP);
+
+                log.warn("Alerta preventiva HU-10/HU-11 en lote porcino '{}': {} cabezas excede aforo {} cabezas en {}%",
+                        code, request.initialQuantity(), maxCapacityPigs, overcrowdingPct);
+
+                if (!request.forceStocking()) {
+                    throw new BusinessRuleException(String.format(
+                        "Alerta preventiva de sobrecupo porcino (HU-10/HU-11): La cantidad ingresada (%d cabezas) "
+                        + "supera el aforo máximo reglamentario del corral '%s' (%d cabezas para etapa %s) en un %.2f%%. "
+                        + "Para continuar conscientemente, confirme con 'forceStocking=true'.",
+                        request.initialQuantity(), pen.getPenCode(), maxCapacityPigs, pen.getPhase(), overcrowdingPct
+                    ));
+                }
+            }
+        }
+
         Batch batch = Batch.builder()
                 .farm(farm)
                 .pond(pond)
+                .pen(pen)
                 .species(species)
                 .batchCode(code)
                 .stockingDate(request.stockingDate())

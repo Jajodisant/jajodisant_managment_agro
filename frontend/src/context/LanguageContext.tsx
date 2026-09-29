@@ -169,6 +169,15 @@ const translations: Record<Language, Record<string, string>> = {
     capacity_heads: 'Aforo Máximo de Cabezas',
     drinker_label: 'Bebederos',
     feeder_label: 'Bocas de Comedero',
+
+    // HU-11 Swine Batches & Nutrition
+    tab_batches_all: 'Todos los Lotes',
+    tab_batches_fish: 'Piscicultura (Estanques)',
+    tab_batches_swine: 'Porcicultura (Corrales HU-11)',
+    type_fish_label: 'Acuícola / Peces (Siembra en Estanque)',
+    type_swine_label: 'Porcícola / Cerdos (Alojamiento en Corral HU-11)',
+    label_pen: 'Corral',
+    label_barn: 'Galpón',
   },
   en: {
     // App & Header
@@ -336,6 +345,15 @@ const translations: Record<Language, Record<string, string>> = {
     capacity_heads: 'Max Capacity (Heads)',
     drinker_label: 'Drinkers',
     feeder_label: 'Feeder Spaces',
+
+    // HU-11 Swine Batches & Nutrition
+    tab_batches_all: 'All Batches',
+    tab_batches_fish: 'Fish (Ponds)',
+    tab_batches_swine: 'Swine (Pens HU-11)',
+    type_fish_label: 'Aquaculture / Fish (Stock in Pond)',
+    type_swine_label: 'Swine / Pigs (House in Pen HU-11)',
+    label_pen: 'Pen',
+    label_barn: 'Barn',
   }
 };
 
