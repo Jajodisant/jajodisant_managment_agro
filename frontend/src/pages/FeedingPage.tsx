@@ -21,7 +21,7 @@ import { saveFeedingOffline, getPendingFeedingsCount, syncPendingFeedings } from
 import { useTranslation } from '../context/LanguageContext';
 
 export const FeedingPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarmId, setSelectedFarmId] = useState<string>('');
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -85,8 +85,12 @@ export const FeedingPage: React.FC = () => {
   }, [selectedBatchId]);
 
   const updatePendingCount = async () => {
-    const count = await getPendingFeedingsCount();
-    setPendingCount(count);
+    try {
+      const count = await getPendingFeedingsCount();
+      setPendingCount(count);
+    } catch (err) {
+      console.error('Error al consultar registros pendientes:', err);
+    }
   };
 
   const loadFarms = async () => {
@@ -127,7 +131,6 @@ export const FeedingPage: React.FC = () => {
       ]);
       setFeedingPlan(plan);
       setFeedingHistory(history);
-
       if (plan) {
         setSuppliedQuantityKg(Number(plan.rationQuotaKg.toFixed(2)));
         if (plan.suggestedProteinPct) {
@@ -135,7 +138,7 @@ export const FeedingPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Error al obtener datos de alimentación');
+      setErrorMessage(err.message || 'Error al cargar datos nutricionales');
     } finally {
       setLoading(false);
     }
@@ -143,40 +146,40 @@ export const FeedingPage: React.FC = () => {
 
   const handleManualSync = async () => {
     if (!navigator.onLine) {
-      setErrorMessage('No hay conexión a internet para sincronizar.');
+      setErrorMessage('Sin conexión a internet. No es posible sincronizar.');
       return;
     }
     try {
       setIsSyncing(true);
       setErrorMessage(null);
-      const result = await syncPendingFeedings();
+      const syncedCount = await syncPendingFeedings();
       await updatePendingCount();
+      setSuccessMessage(
+        language === 'es'
+          ? `¡Sincronización completada! ${syncedCount} raciones guardadas en el servidor.`
+          : `Sync complete! ${syncedCount} feed rations uploaded to server.`
+      );
       if (selectedBatchId) {
         await loadBatchFeedingData(selectedBatchId);
       }
-      setSuccessMessage(`Sincronización completada: ${result.success} raciones subidas al servidor.`);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Fallo durante la sincronización');
+      setErrorMessage(err.message || 'Error durante la sincronización');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRecordFeeding = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatchId) return;
 
-    if (suppliedQuantityKg <= 0 || costPerKg < 0) {
-      setErrorMessage('La cantidad suministrada y el costo por kg deben ser válidos.');
-      return;
-    }
-
     const payload = {
       feedingDate,
-      rationNumber,
+      rationNumber: Number(rationNumber),
       feedingTime,
       feedBrandType,
-      suppliedQuantityKg,
+      suppliedQuantityKg: Number(suppliedQuantityKg),
       costPerKg,
       waterTemperatureC: waterTemperatureC ? parseFloat(waterTemperatureC) : undefined,
       dissolvedOxygenMgL: dissolvedOxygenMgL ? parseFloat(dissolvedOxygenMgL) : undefined
@@ -193,7 +196,11 @@ export const FeedingPage: React.FC = () => {
           ...payload
         });
         await updatePendingCount();
-        setSuccessMessage('📱 Guardado OFFLINE con éxito en dispositivo. Se sincronizará automáticamente al volver internet.');
+        setSuccessMessage(
+          language === 'es'
+            ? '📱 Ración asentada OFFLINE en dispositivo. Se sincronizará automáticamente al volver internet.'
+            : '📱 Ration recorded OFFLINE on device. It will auto-sync when internet is restored.'
+        );
         setIsModalOpen(false);
         resetForm();
       } catch (err: any) {
@@ -207,19 +214,27 @@ export const FeedingPage: React.FC = () => {
     // MODO ONLINE
     try {
       await api.recordFeeding(selectedBatchId, payload);
-      setSuccessMessage('Ración registrada en el servidor con éxito.');
+      setSuccessMessage(
+        language === 'es'
+          ? 'Ración asentada en el servidor y en la bitácora con éxito.'
+          : 'Feed ration recorded on server and logbook successfully.'
+      );
       setIsModalOpen(false);
       resetForm();
       await loadBatchFeedingData(selectedBatchId);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
-      // Fallback a almacenamiento offline si la llamada de red falla
       try {
         await saveFeedingOffline({
           batchId: selectedBatchId,
           ...payload
         });
         await updatePendingCount();
-        setSuccessMessage('Falla de red detectada: Se respaldó la ración en almacenamiento local offline.');
+        setSuccessMessage(
+          language === 'es'
+            ? 'Respaldo offline: Ración asegurada en el dispositivo ante corte de señal.'
+            : 'Offline fallback: Ration secured in local device storage.'
+        );
         setIsModalOpen(false);
         resetForm();
       } catch (dbErr: any) {
@@ -232,95 +247,118 @@ export const FeedingPage: React.FC = () => {
 
   const resetForm = () => {
     setFeedingDate(new Date().toISOString().split('T')[0]);
-    setRationNumber(prev => prev + 1);
+    setRationNumber((prev) => prev + 1);
     setFeedingTime(new Date().toTimeString().slice(0, 5));
     if (feedingPlan) {
       setSuppliedQuantityKg(Number(feedingPlan.rationQuotaKg.toFixed(2)));
     }
   };
 
-  const selectedBatch = batches.find(b => b.id === selectedBatchId);
+  const selectedBatch = batches.find((b) => b.id === selectedBatchId);
   const totalKgSuppliedToday = feedingHistory
-    .filter(r => r.feedingDate === new Date().toISOString().split('T')[0])
+    .filter((r) => r.feedingDate === new Date().toISOString().split('T')[0])
     .reduce((sum, r) => sum + r.suppliedQuantityKg, 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Toast Feedback */}
+      {successMessage && (
+        <div className="card-paper bg-[#EDF3EE] dark:bg-[#18231C] border-[#2E4A36] text-[#2E4A36] dark:text-[#86A98F] px-4 py-3 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5 shrink-0" />
+          <span className="font-semibold text-sm">{successMessage}</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="card-paper bg-[#A32A26]/10 border-[#A32A26]/30 text-[#A32A26] dark:text-[#E5807D] px-4 py-3 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span className="font-semibold text-sm">{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Cabecera Estilo Cuaderno */}
+      <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-4 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <Utensils className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="notebook-stamp">
+              FOLIO #03 • ALIMENTACIÓN OFFLINE-FIRST
+            </span>
+            <span className="text-xs text-[#666159] dark:text-[#9E9689] uppercase tracking-wider font-mono">
+              NORMAS HU-03 & HU-04
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-serif text-[#1F1D1A] dark:text-[#EDE6DA] font-semibold tracking-tight">
             {t('feeding_title')}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-sm text-[#666159] dark:text-[#9E9689] mt-0.5 max-w-2xl">
             {t('feeding_subtitle')}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {pendingCount > 0 && (
             <button
               onClick={handleManualSync}
               disabled={!isOnline || isSyncing}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3.5 py-2.5 rounded-2xl shadow-sm transition disabled:opacity-50 text-xs sm:text-sm"
+              className="btn-secondary text-xs sm:text-sm px-3.5 h-11"
+              title="Sincronizar raciones"
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {t('btn_sync')} ({pendingCount})
+              <span>{t('btn_sync')} ({pendingCount})</span>
             </button>
           )}
 
           <button
             onClick={() => setIsModalOpen(true)}
             disabled={!selectedBatchId}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl shadow-sm transition disabled:opacity-50 text-xs sm:text-sm"
+            className="btn-primary text-xs sm:text-sm px-4 h-11 disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            {t('btn_feed_touch')}
+            <span>{t('btn_feed_touch')}</span>
           </button>
         </div>
       </div>
 
       {/* Selectores de Granja y Lote */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 transition-colors">
-          <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="card-paper p-4 flex items-center gap-3">
+          <Layers className="w-5 h-5 text-[#2E4A36] dark:text-[#86A98F] shrink-0" />
           <div className="flex-1">
-            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-              Seleccionar Granja
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-[#666159] dark:text-[#9E9689] block mb-1">
+              {language === 'es' ? 'Granja Seleccionada' : 'Selected Farm'}
             </label>
             <select
               value={selectedFarmId}
               onChange={(e) => setSelectedFarmId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-transparent font-serif font-semibold text-sm sm:text-base text-[#1F1D1A] dark:text-[#EDE6DA] border-0 focus:ring-0 cursor-pointer p-0"
             >
-              {farms.map((farm) => (
-                <option key={farm.id} value={farm.id} className="dark:bg-slate-900">
-                  {farm.name}
+              {farms.map((f) => (
+                <option key={f.id} value={f.id} className="bg-[#FBF8F1] dark:bg-[#1F1C18] text-[#1F1D1A] dark:text-[#EDE6DA]">
+                  {f.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 transition-colors">
-          <Utensils className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <div className="card-paper p-4 flex items-center gap-3">
+          <Utensils className="w-5 h-5 text-[#2E4A36] dark:text-[#86A98F] shrink-0" />
           <div className="flex-1">
-            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-              Lote Objetivo
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-[#666159] dark:text-[#9E9689] block mb-1">
+              {language === 'es' ? 'Lote de Alimentación' : 'Feeding Batch'}
             </label>
             <select
               value={selectedBatchId}
               onChange={(e) => setSelectedBatchId(e.target.value)}
               disabled={batches.length === 0}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+              className="w-full bg-transparent font-serif font-semibold text-sm sm:text-base text-[#1F1D1A] dark:text-[#EDE6DA] border-0 focus:ring-0 cursor-pointer p-0 disabled:opacity-50"
             >
               {batches.length === 0 ? (
-                <option value="">No hay lotes en esta granja</option>
+                <option value="">{language === 'es' ? 'No hay lotes en esta granja' : 'No batches in this farm'}</option>
               ) : (
                 batches.map((batch) => (
-                  <option key={batch.id} value={batch.id} className="dark:bg-slate-900">
-                    Lote {batch.batchCode} - {batch.speciesCommonName}
+                  <option key={batch.id} value={batch.id} className="bg-[#FBF8F1] dark:bg-[#1F1C18] text-[#1F1D1A] dark:text-[#EDE6DA]">
+                    Lote {batch.batchCode} • {batch.speciesCommonName}
                   </option>
                 ))
               )}
@@ -329,160 +367,150 @@ export const FeedingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Estado de Red e IndexedDB */}
-      <div className="flex items-center justify-between p-3 mb-6 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs transition-colors">
+      {/* Barra Discreta de Conectividad de Campo */}
+      <div className="card-paper py-2.5 px-4 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          {isOnline ? (
-            <span className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
-              <Wifi className="w-4 h-4" /> {t('status_online')}
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400 animate-pulse">
-              <WifiOff className="w-4 h-4" /> {t('status_offline')} (IndexedDB Local)
-            </span>
-          )}
+          <span
+            className={`w-2.5 h-2.5 rounded-full ${
+              isOnline ? 'bg-[#2A6B3D]' : 'bg-[#9C631B] animate-pulse'
+            }`}
+          />
+          <span className="font-semibold text-[#1F1D1A] dark:text-[#EDE6DA]">
+            {isOnline ? t('status_online') : `${t('status_offline')} (IndexedDB Local)`}
+          </span>
         </div>
-        <div className="font-semibold text-slate-600 dark:text-slate-300">
-          Raciones pendientes de sync: <span className="font-black text-slate-900 dark:text-white">{pendingCount}</span>
-        </div>
+        <span className="text-[#666159] dark:text-[#9E9689] font-mono">
+          Raciones locales pendientes: <strong className="text-[#1F1D1A] dark:text-[#EDE6DA]">{pendingCount}</strong>
+        </span>
       </div>
 
-      {/* Alertas */}
-      {errorMessage && (
-        <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 flex items-start gap-3 text-red-700 dark:text-red-300 text-sm">
-          <AlertTriangle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
-          <div>{errorMessage}</div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3 text-emerald-800 dark:text-emerald-300 text-sm">
-          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
-          <div>{successMessage}</div>
-        </div>
-      )}
-
-      {/* HU-03: Plan Diario Calculado según Biomasa */}
+      {/* HU-03: Plan Diario Calculado según Biomasa (Estilo Cuaderno) */}
       {feedingPlan && (
-        <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-teal-800 text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-lg">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/20">
+        <section className="card-notebook-forest p-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-baseline justify-between gap-3 border-b border-[#E2D9CA] dark:border-[#332E27] pb-3">
             <div>
-              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white/20 text-white">
-                HU-03 • Plan Nutricional Calculado
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black mt-2">
+              <span className="notebook-stamp text-[10px]">PLAN NUTRICIONAL HU-03</span>
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA] mt-1">
                 Lote {feedingPlan.batchCode} — {feedingPlan.speciesCommonName}
               </h2>
-              <p className="text-emerald-100 text-xs mt-1">
-                Biomasa activa: <span className="font-bold">{feedingPlan.currentBiomassKg.toFixed(1)} kg</span> | Peso Promedio: <span className="font-bold">{feedingPlan.currentAvgWeightG.toFixed(1)} g</span>
+              <p className="text-xs text-[#666159] dark:text-[#9E9689] mt-0.5 font-mono">
+                Biomasa activa: <strong className="text-[#1F1D1A] dark:text-[#EDE6DA]">{feedingPlan.currentBiomassKg.toFixed(1)} kg</strong> | Peso Promedio: <strong className="text-[#1F1D1A] dark:text-[#EDE6DA]">{feedingPlan.currentAvgWeightG.toFixed(1)} g</strong>
               </p>
             </div>
 
             <div className="text-left md:text-right">
-              <div className="text-3xl sm:text-4xl font-black">{feedingPlan.totalDailyQuotaKg.toFixed(2)} kg</div>
-              <div className="text-xs text-emerald-200 uppercase tracking-wider font-bold">
+              <span className="font-serif font-bold text-2xl sm:text-3xl text-[#2E4A36] dark:text-[#86A98F] metric-number block">
+                {feedingPlan.totalDailyQuotaKg.toFixed(2)} kg
+              </span>
+              <span className="text-[11px] text-[#666159] dark:text-[#9E9689] font-mono uppercase">
                 {t('feed_plan_quota')} ({feedingPlan.recommendedBiomassPercentage.toFixed(1)}% Biomasa)
-              </div>
+              </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <span className="text-[11px] text-emerald-200 uppercase font-bold block">Por Ración</span>
-              <span className="text-2xl font-black">{feedingPlan.rationQuotaKg.toFixed(2)} kg</span>
-              <span className="text-xs text-emerald-200 block mt-1">{feedingPlan.dailyFrequency} raciones / día</span>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <span className="text-[11px] text-emerald-200 uppercase font-bold block">Proteína Sugerida</span>
-              <span className="text-2xl font-black">{feedingPlan.suggestedProteinPct}%</span>
-              <span className="text-xs text-emerald-200 block mt-1">Nivel óptimo especie</span>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 col-span-2">
-              <span className="text-[11px] text-emerald-200 uppercase font-bold block mb-2 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" /> {t('suggested_hours')}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="p-3 bg-[#F4EFE3]/70 dark:bg-[#141210]/60 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+              <span className="text-[10px] uppercase font-semibold text-[#666159] dark:text-[#9E9689] block">Por Ración</span>
+              <span className="font-serif font-bold text-xl text-[#1F1D1A] dark:text-[#EDE6DA] metric-number block">
+                {feedingPlan.rationQuotaKg.toFixed(2)} kg
               </span>
-              <div className="flex flex-wrap gap-2">
+              <span className="text-[10px] text-[#666159] dark:text-[#9E9689] block mt-0.5">
+                {feedingPlan.dailyFrequency} raciones / día
+              </span>
+            </div>
+
+            <div className="p-3 bg-[#F4EFE3]/70 dark:bg-[#141210]/60 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F]">
+              <span className="text-[10px] uppercase font-semibold text-[#666159] dark:text-[#9E9689] block">Proteína Requerida</span>
+              <span className="font-serif font-bold text-xl text-[#1F1D1A] dark:text-[#EDE6DA] metric-number block">
+                {feedingPlan.suggestedProteinPct}%
+              </span>
+              <span className="text-[10px] text-[#666159] dark:text-[#9E9689] block mt-0.5">
+                Nivel óptimo especie
+              </span>
+            </div>
+
+            <div className="p-3 bg-[#F4EFE3]/70 dark:bg-[#141210]/60 rounded-[4px] border border-[#DDD4C4] dark:border-[#38342F] col-span-2">
+              <span className="text-[10px] uppercase font-semibold text-[#666159] dark:text-[#9E9689] block mb-1.5 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-[#2E4A36] dark:text-[#86A98F]" />
+                <span>{t('suggested_hours')}</span>
+              </span>
+              <div className="flex flex-wrap gap-1.5">
                 {feedingPlan.suggestedHours && feedingPlan.suggestedHours.map((hour, idx) => (
-                  <span key={idx} className="bg-white text-emerald-900 px-3 py-1 rounded-xl text-xs font-black shadow-sm">
+                  <span key={idx} className="notebook-stamp font-mono text-xs">
                     {hour}
                   </span>
                 ))}
               </div>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Historial de Raciones Suministradas */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      {/* Historial de Raciones en Formato Libro */}
+      <section className="card-paper p-0 overflow-hidden">
+        <div className="p-4 border-b border-[#E2D9CA] dark:border-[#332E27] flex items-center justify-between bg-[#F8F4EB] dark:bg-[#181613]">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">Raciones Registradas</h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              Hoy: {totalKgSuppliedToday.toFixed(2)} kg suministrados
+            <h2 className="font-serif font-semibold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">
+              {language === 'es' ? 'Raciones Suministradas en Bitácora' : 'Rations Logged in Journal'}
+            </h2>
+            <span className="notebook-stamp text-[10px] py-0.5">
+              Hoy: {totalKgSuppliedToday.toFixed(2)} kg
             </span>
           </div>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{feedingHistory.length} raciones</span>
+          <span className="text-xs font-mono text-[#666159] dark:text-[#9E9689]">
+            {feedingHistory.length} entregas
+          </span>
         </div>
 
         {feedingHistory.length === 0 ? (
-          <div className="p-12 text-center">
-            <Utensils className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-            <h3 className="text-slate-800 dark:text-slate-200 font-bold text-base mb-1">Sin raciones registradas</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm mx-auto mb-4">
-              Usa el botón "{t('btn_feed_touch')}" para registrar las entregas de concentrado del día. Funciona con o sin señal.
+          <div className="p-8 text-center">
+            <Utensils className="w-10 h-10 text-[#666159] dark:text-[#9E9689] mx-auto mb-2 opacity-60" />
+            <h3 className="font-serif font-semibold text-base text-[#1F1D1A] dark:text-[#EDE6DA]">
+              {language === 'es' ? 'Sin raciones registradas para este lote.' : 'No rations recorded for this batch.'}
+            </h3>
+            <p className="text-xs text-[#666159] dark:text-[#9E9689] max-w-sm mx-auto mt-1 mb-4">
+              {language === 'es'
+                ? 'Usa el botón "Alimentar (1-Toque)" para registrar las entregas en campo sin depender de conexión a internet.'
+                : 'Use "Feed (1-Touch)" to log field rations without depending on internet connection.'}
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
               disabled={!selectedBatchId}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2 rounded-2xl shadow-sm transition disabled:opacity-50"
+              className="btn-primary text-xs h-10 px-4 inline-flex disabled:opacity-50"
             >
-              Registrar Primera Ración
+              <Plus className="w-4 h-4" />
+              <span>Registrar Primera Ración</span>
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 text-xs uppercase font-bold border-b border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs sm:text-sm text-[#1F1D1A] dark:text-[#EDE6DA]">
+              <thead className="border-b border-[#E2D9CA] dark:border-[#332E27] text-[11px] uppercase tracking-wider font-semibold text-[#666159] dark:text-[#9E9689] bg-[#F4EFE3]/50 dark:bg-[#141210]/50 font-serif">
                 <tr>
                   <th className="px-4 py-3">Fecha & Hora</th>
-                  <th className="px-4 py-3">Ración #</th>
-                  <th className="px-4 py-3">Concentrado / Tipo</th>
+                  <th className="px-4 py-3">Turno</th>
+                  <th className="px-4 py-3">Alimento Suministrado</th>
                   <th className="px-4 py-3">Cantidad</th>
-                  <th className="px-4 py-3">Costo / kg</th>
-                  <th className="px-4 py-3">Costo Total</th>
-                  <th className="px-4 py-3">Temp. Agua</th>
-                  <th className="px-4 py-3">Oxígeno</th>
+                  <th className="px-4 py-3">Costo Ración</th>
+                  <th className="px-4 py-3">Parámetros Agua</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {feedingHistory.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                    <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      {item.feedingDate} • <span className="text-emerald-700 dark:text-emerald-400">{item.feedingTime}</span>
+              <tbody className="divide-y divide-[#E2D9CA] dark:divide-[#332E27]">
+                {feedingHistory.map((rec) => (
+                  <tr key={rec.id} className="hover:bg-[#F4EFE3]/50 dark:hover:bg-[#181613] transition">
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {rec.feedingDate} • {rec.feedingTime}
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap font-bold text-slate-800 dark:text-slate-200">
-                      Ración {item.rationNumber}
+                    <td className="px-4 py-3 font-mono">Ración #{rec.rationNumber}</td>
+                    <td className="px-4 py-3">{rec.feedBrandType}</td>
+                    <td className="px-4 py-3 font-bold text-[#2E4A36] dark:text-[#86A98F] metric-number">
+                      {rec.suppliedQuantityKg.toFixed(2)} kg
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                      {item.feedBrandType}
+                    <td className="px-4 py-3 font-mono">
+                      ${rec.totalRationCost ? rec.totalRationCost.toLocaleString() : (rec.suppliedQuantityKg * (rec.costPerKg || 4500)).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap font-black text-emerald-700 dark:text-emerald-400">
-                      {item.suppliedQuantityKg.toFixed(2)} kg
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                      ${item.costPerKg.toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap font-bold text-slate-900 dark:text-white">
-                      ${item.totalRationCost.toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                      {item.waterTemperatureC ? `${item.waterTemperatureC} °C` : '-'}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                      {item.dissolvedOxygenMgL ? `${item.dissolvedOxygenMgL} mg/L` : '-'}
+                    <td className="px-4 py-3 text-xs text-[#666159] dark:text-[#9E9689] font-mono">
+                      {rec.waterTemperatureC ? `${rec.waterTemperatureC}°C` : '—'} | {rec.dissolvedOxygenMgL ? `${rec.dissolvedOxygenMgL} mg/L` : '—'}
                     </td>
                   </tr>
                 ))}
@@ -490,194 +518,146 @@ export const FeedingPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Modal de Registro Rápido (1-Touch) */}
+      {/* Modal: Registro Rápido 1-Toque (HU-04) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 overflow-y-auto max-h-[90vh] transition-colors">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Utensils className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  Alimentación de Campo (1-Touch)
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {isOnline ? 'Registro directo al servidor' : 'Registro local seguro (IndexedDB Offline)'}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-xl font-bold p-1"
-              >
-                &times;
-              </button>
+        <div className="fixed inset-0 z-50 bg-[#1F1D1A]/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="card-paper max-w-lg w-full p-6 space-y-4 shadow-xl border border-[#E2D9CA] dark:border-[#332E27] max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-[#E2D9CA] dark:border-[#332E27] pb-2">
+              <span className="notebook-stamp text-[10px]">RACIÓN EN CAMPO HU-04</span>
+              <h3 className="text-lg font-serif font-bold text-[#1F1D1A] dark:text-[#EDE6DA] mt-1">
+                Asentar Ración de Concentrado
+              </h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleRecordFeeding} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Fecha
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Cantidad Suministrada (kg) *
                   </label>
-                  <div className="relative">
-                    <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="date"
-                      required
-                      value={feedingDate}
-                      onChange={(e) => setFeedingDate(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="0.1"
+                    required
+                    value={suppliedQuantityKg}
+                    onChange={(e) => setSuppliedQuantityKg(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-base font-bold text-[#2E4A36] dark:text-[#86A98F]"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Hora
-                  </label>
-                  <div className="relative">
-                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="time"
-                      required
-                      value={feedingTime}
-                      onChange={(e) => setFeedingTime(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Ración Número
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Turno / Número de Ración *
                   </label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={rationNumber}
-                    onChange={(e) => setRationNumber(Math.max(1, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold dark:text-white"
+                    onChange={(e) => setRationNumber(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Fecha *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={feedingDate}
+                    onChange={(e) => setFeedingDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Cantidad (kg)
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Hora Suministro *
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={feedingTime}
+                    onChange={(e) => setFeedingTime(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                  Tipo / Marca del Concentrado
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={feedBrandType}
+                  onChange={(e) => setFeedBrandType(e.target.value)}
+                  placeholder="ej. Extrusado 38% Proteína Iniciación"
+                  className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Costo / kg (COP)
                   </label>
                   <input
                     type="number"
-                    step="0.05"
-                    min="0.05"
-                    required
-                    value={suppliedQuantityKg}
-                    onChange={(e) => setSuppliedQuantityKg(Math.max(0.01, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700 dark:text-emerald-400"
+                    step="50"
+                    value={costPerKg}
+                    onChange={(e) => setCostPerKg(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Tipo / Marca de Alimento
-                </label>
-                <div className="relative">
-                  <Package className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={feedBrandType}
-                    onChange={(e) => setFeedBrandType(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
-                    placeholder="ej. Tilapia Extrusado 38%"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Costo por Kg (COP)
-                </label>
-                <div className="relative">
-                  <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <div>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Temp. Agua (°C)
+                  </label>
                   <input
                     type="number"
-                    step="50"
-                    min="0"
-                    required
-                    value={costPerKg}
-                    onChange={(e) => setCostPerKg(Math.max(0, Number(e.target.value)))}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
-                    placeholder="4500"
+                    step="0.1"
+                    value={waterTemperatureC}
+                    onChange={(e) => setWaterTemperatureC(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
                   />
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex justify-between">
-                  <span>Costo total ración:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    ${(suppliedQuantityKg * costPerKg).toLocaleString('es-CO')} COP
-                  </span>
+                <div>
+                  <label className="text-xs font-bold text-[#1F1D1A] dark:text-[#EDE6DA] block mb-1">
+                    Oxígeno (mg/L)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={dissolvedOxygenMgL}
+                    onChange={(e) => setDissolvedOxygenMgL(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#F4EFE3] dark:bg-[#141210] border border-[#DDD4C4] dark:border-[#38342F] rounded-[4px] text-sm text-[#1F1D1A] dark:text-[#EDE6DA]"
+                  />
                 </div>
               </div>
 
-              {/* Parámetros físico-químicos opcionales */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-2">
-                  Parámetros de Calidad de Agua (Opcional)
-                </span>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
-                      Temperatura (°C)
-                    </label>
-                    <div className="relative">
-                      <Thermometer className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={waterTemperatureC}
-                        onChange={(e) => setWaterTemperatureC(e.target.value)}
-                        className="w-full pl-8 pr-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs dark:text-white"
-                        placeholder="26.0"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
-                      Oxígeno Disuelto (mg/L)
-                    </label>
-                    <div className="relative">
-                      <Droplets className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={dissolvedOxygenMgL}
-                        onChange={(e) => setDissolvedOxygenMgL(e.target.value)}
-                        className="w-full pl-8 pr-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs dark:text-white"
-                        placeholder="5.5"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#E2D9CA] dark:border-[#332E27]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                  className="btn-secondary text-xs h-10 px-4"
                 >
                   {t('btn_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-2xl shadow-sm transition disabled:opacity-50"
+                  className="btn-primary text-xs h-10 px-4 disabled:opacity-50"
                 >
-                  {submitting ? 'Guardando...' : isOnline ? 'Registrar Ración' : 'Guardar en Dispositivo (Offline)'}
+                  {submitting ? 'Asentando...' : 'Asentar Ración'}
                 </button>
               </div>
             </form>
